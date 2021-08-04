@@ -3,7 +3,11 @@ import random
 from math import ceil
 
 import numpy
+import numpy as np
 import pandas as pd
+import scipy
+from scipy.optimize import curve_fit
+
 from PyQt5 import QtWidgets
 from matplotlib import gridspec
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -53,7 +57,7 @@ class PlotCanvas(FigureCanvas):
         ax = self.figure.add_subplot(self.nrows, self.ncols, self.plot_number(), facecolor=color)
 
         if x is not None and y is not None:
-            ax.plot(y, x)
+            ax.plot(x, y)
 
         ax.set_title(name)
         self.add_function_to_plot(ax, plot_type)
@@ -100,7 +104,6 @@ class PlotCanvas(FigureCanvas):
                 rock_type_value = str(math.inf)
             plot.plot(0, 0, 'o', markersize=5, color=rock_type_colors[i],
                       label='Rock Type ' + str(i + 1) + ': ' + rock_type_value)
-            plot.legend(loc="lower right")
             for dot in dots[i]:
                 plot.plot(dot[0], dot[1], 'o', markersize=4, color=rock_type_colors[i])
 
@@ -108,26 +111,52 @@ class PlotCanvas(FigureCanvas):
             x1 = numpy.array(d['x1'])
             y1 = numpy.array(d['y1'])
 
-            z = numpy.polyfit(x1, y1, 1)
-            p = numpy.poly1d(z)
+            #линейная апросисимация
+            #z = numpy.polyfit(x1, y1, 2)
+            #p = numpy.poly1d(z)
+
+            z = scipy.optimize.curve_fit(lambda t, a, b: a*np.exp(b*t),  x1,  y1)
             xx = []
             yy = []
-            for i1 in range(len(x1)):
-                if p(x1[i1]) > min(y1):
-                    xx.append(x1[i1])
-                    yy.append(p(x1[i1]))
-            plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
-                      label="y=%.6fx+(%.6f)" % (z[0], z[1]))
 
+            for i1 in range(len(x1)):
+                xx.append(x1[i1])
+                yy.append(self.f(z[0][0], z[0][1], x1[i1]))
+
+            rSquare = self.rSquare(yy, y1)
+            plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
+                      label="y=%.4f*e^(%.3f*x)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
+
+        plot.legend(loc="lower right")
         plot.set_yscale('log')
         self.draw()
+
+    def f(self, a, b, x):
+        return a * math.exp(b * x)
+
+    def rSquare(self, estimations, measureds):
+        """ Compute the coefficient of determination of random data.
+        This metric gives the level of confidence about the model used to model data"""
+        SEE = ((np.array(measureds) - np.array(estimations)) ** 2).sum()
+        mMean = np.array(measureds).sum() / float(len(measureds))
+        dErr = ((np.array(measureds) - mMean) ** 2).sum()
+
+        print(SEE)
+        print(dErr)
+
+
+        '''
+        print(SEE)
+        mMean = (np.array(measureds)).sum() / float(len(measureds))
+        print(mMean)
+        dErr = ((mMean - measureds)).sum()
+        print(dErr)
+        '''
+        return 1 - (SEE / dErr)
 
     def draw_RTWS(self, plot, dots_x):
         plot.lines = []
         borders, colors = self.get_borders_main_plot()
-
-        print(borders)
-        print(colors)
 
         for rock_type_n in range(1, len(borders) + 1):
             if rock_type_n - 1 < len(borders):
@@ -135,7 +164,7 @@ class PlotCanvas(FigureCanvas):
             else:
                 rock_type_value = str(math.inf)
 
-            #plot.plot(1, 1, 'o', markersize=0, color=colors[rock_type_n - 1],
+            # plot.plot(1, 1, 'o', markersize=0, color=colors[rock_type_n - 1],
             #          label='Rock Type ' + str(rock_type_n) + ': ' + rock_type_value)
 
             step = len(dots_x) / (len(borders) + 1)
@@ -143,7 +172,6 @@ class PlotCanvas(FigureCanvas):
                       '-', markersize=1, color=colors[rock_type_n - 1],
                       label='Rock Type ' + str(rock_type_n) + ': ' + rock_type_value)
             plot.legend(loc="lower right")
-
 
         self.draw()
 
@@ -181,7 +209,6 @@ class PlotCanvas(FigureCanvas):
             self.ncols = ncols
 
     def mouse_click(self, event):
-        print(event.inaxes.__dict__)
         if event.inaxes in self.plot_click_add_border and event.dblclick is True:
             if event.button == 3:
                 event.inaxes.set_title(event.inaxes.get_title().replace('(дважды ПКМ удалить)', ''))

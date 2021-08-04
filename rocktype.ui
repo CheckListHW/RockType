@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1102</width>
+    <width>1068</width>
     <height>878</height>
    </rect>
   </property>
@@ -17,6 +17,9 @@
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -30,77 +33,124 @@
        <attribute name="title">
         <string>Загрузка данных</string>
        </attribute>
-       <widget class="QWidget" name="layoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>385</width>
-          <height>30</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QComboBox" name="comboBox_data">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QFrame" name="data_button_frame">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>385</width>
+            <height>40</height>
+           </size>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
-            <property name="text">
-             <string>ГИС</string>
-            </property>
+            <widget class="QComboBox" name="select_data_cb">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <item>
+              <property name="text">
+               <string>Петрография</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>ГИС</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Керн</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Пласт</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Полигон</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Координаты скважин</string>
+              </property>
+             </item>
+            </widget>
            </item>
            <item>
-            <property name="text">
-             <string>Керн</string>
-            </property>
+            <widget class="QPushButton" name="load_data_bt">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Выбрать данные</string>
+             </property>
+            </widget>
            </item>
            <item>
-            <property name="text">
-             <string>Петрография</string>
-            </property>
+            <widget class="QPushButton" name="data_rate_bt">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Оценить данные</string>
+             </property>
+            </widget>
            </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="data_info_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
            <item>
-            <property name="text">
-             <string>Пласт</string>
-            </property>
+            <widget class="QListWidget" name="data_info_list"/>
            </item>
-           <item>
-            <property name="text">
-             <string>Полигон</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Координаты скважин</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_data_rate">
-           <property name="text">
-            <string>Оценить данные</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_data_enter">
-           <property name="text">
-            <string>Выбрать данные</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+          </layout>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_rock_type">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <attribute name="title">
         <string>Рок типирование</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QFrame" name="frame_3">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
             <horstretch>0</horstretch>
@@ -148,66 +198,70 @@
                <number>0</number>
               </property>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_2">
+               <widget class="QComboBox" name="rocktype_CB">
                 <item>
-                 <widget class="QComboBox" name="comboBox_rocktype_3">
-                  <item>
-                   <property name="text">
-                    <string>FZI</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Lucia (RFN)</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Winland r35</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>GHE</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Buckles</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Cuddy</string>
-                   </property>
-                  </item>
-                 </widget>
+                 <property name="text">
+                  <string>FZI</string>
+                 </property>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="calc_main_btn">
-                  <property name="text">
-                   <string>Расичтать</string>
-                  </property>
-                 </widget>
+                 <property name="text">
+                  <string>Winland r35</string>
+                 </property>
                 </item>
-               </layout>
+                <item>
+                 <property name="text">
+                  <string>Lucia (RFN)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>GHE</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Buckles</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Cuddy</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="calc_main_btn">
+                <property name="text">
+                 <string>Плотность / пористость</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QPushButton" name="calc_rock_type_btn">
                 <property name="text">
-                 <string>Расичтать рок-тип</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="calc_RTWS_Btn">
-                <property name="text">
-                 <string>Расичтать рок-тип/
-водонасыщенность </string>
+                 <string>Рок-тип</string>
                 </property>
                </widget>
               </item>
              </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="calc_RTWS_Btn">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Рок-тип / водонасыщенность </string>
+             </property>
             </widget>
            </item>
            <item>
@@ -339,7 +393,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1041</width>
+             <width>1007</width>
              <height>706</height>
             </rect>
            </property>
@@ -377,7 +431,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1102</width>
+     <width>1068</width>
      <height>21</height>
     </rect>
    </property>

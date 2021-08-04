@@ -3,20 +3,20 @@ import math
 from SheetReader import SheetReader
 
 
-class FZI:
-    FZI_chart_x = []
-    FZI_chart_y = []
+class fzi:
+    probability = []
+    method = []
 
     rock_type_borders = []
     dots_rock_type = []
-    pron_por_fzi = []
+    pron_por = []
 
     rock_type_chart_scale = 'log'
     RTWS_chart_type = 'current'
 
     rock_type_colors = []
 
-    def __init__(self, fes_svod_file, sw_file, depth, porv, pron, layer, note):
+    def __init__(self, main_file, depth, porv, pron, layer, note, c_sw, r_sw):
         super().__init__()
 
         self.depth_column_name = depth
@@ -25,12 +25,15 @@ class FZI:
         self.layer_column_name = layer
         self.note_column_name = note
 
-        self.calculate_chart_auto_FZI(fes_svod_file)
-        self.calculate_RTWS(sw_file)
+        self.current_sw_column_name = c_sw
+        self.residual_sw_column_name = r_sw
+
+        self.calc_main(main_file)
+        self.calculate_RTWS(main_file)
 
     def calculate_RTWS(self, sw_file):
-        current_sw = SheetReader.get_column(sw_file, 'D')
-        residual_sw = SheetReader.get_column(sw_file, 'V')
+        current_sw = SheetReader.get_column(sw_file, self.current_sw_column_name)
+        residual_sw = SheetReader.get_column(sw_file, self.residual_sw_column_name)
 
         self.modify_current_sw = []
         print(current_sw)
@@ -45,26 +48,26 @@ class FZI:
                 self.modify_residual_sw.append(i / 100)
         self.modify_residual_sw = sorted(self.modify_residual_sw)
 
-    def calculate_chart_auto_FZI(self, filename):
-        wb_fes = SheetReader(filename, self.depth_column_name,
+    def calc_main(self, filename):
+        wb_fes = SheetReader('fzi', filename, self.depth_column_name,
                              self.porv_column_name,
                              self.pron_column_name,
                              self.layer_column_name,
                              self.note_column_name, )
 
-        self.FZI_chart_x = wb_fes.get_column_auto_FZI(['Log(FZI)'])
-        self.FZI_chart_y = wb_fes.get_column_auto_FZI(['probability'])
-        self.pron_por_fzi = wb_fes.get_column_auto_FZI(['Пористость', 'Проницаемость', 'Log(FZI)'])
+        self.probability = wb_fes.get_column_method(['probability'])
+        self.method = wb_fes.get_column_method(['Log(FZI)'])
+        self.pron_por = wb_fes.get_column_method(['Пористость', 'Проницаемость', 'Log(FZI)'])
 
-    def calculate_rock_type(self, rock_type_borders):
+    def calc_rocktype(self, rock_type_borders):
         x_pts_modify = [-math.inf] + sorted(rock_type_borders)
         dots_rock_type = []
         for x in range(len(x_pts_modify) - 1):
             rock_type_n = []
 
-            for i in range(len(self.pron_por_fzi['Log(FZI)'])):
-                if x_pts_modify[x] < self.pron_por_fzi['Log(FZI)'][i] < x_pts_modify[x + 1]:
-                    rock_type_n.append([self.pron_por_fzi['Пористость'][i], self.pron_por_fzi['Проницаемость'][i]])
+            for i in range(len(self.pron_por['Log(FZI)'])):
+                if x_pts_modify[x] < self.pron_por['Log(FZI)'][i] < x_pts_modify[x + 1]:
+                    rock_type_n.append([self.pron_por['Пористость'][i], self.pron_por['Проницаемость'][i]])
 
             dots_rock_type.append(rock_type_n)
 
