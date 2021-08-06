@@ -13,7 +13,8 @@ class SheetReader:
     FZI_sheet = None
     fzi = None
 
-    def __init__(self, method, url, depth_column_name, porv_column_name, pron_column_name, layer_column_name, note_column_name):
+    def __init__(self, method, url, depth_column_name, porv_column_name, pron_column_name, layer_column_name,
+                 note_column_name):
         self.depth_column_name = depth_column_name
         self.pron_column_name = pron_column_name
         self.porv_column_name = porv_column_name
@@ -21,10 +22,9 @@ class SheetReader:
         self.note_column_name = note_column_name
         self.url = url
 
-        # доступные методы: fzi, winland, ...
+        # доступные методы: fzi, winland, lucia ...
         self.method = method
         self.old_workbook = openpyxl.load_workbook(url)
-        print(self.old_workbook)
         self.sheet = self.old_workbook[self.old_workbook.sheetnames[0]]
         self.run()
 
@@ -87,21 +87,27 @@ class SheetReader:
         df['RQI'] = 0.0314 * df['корень']
         df['FZI'] = df['RQI'] / df['porosity*']
         df['Log(FZI)'] = np.log(df['FZI'])
-        df['probability'] = 1 / (len(df)) * (df.index+1)
+        df['probability'] = 1 / (len(df)) * (df.index + 1)
         df = df.sort_values(by='Log(FZI)', ascending=True)  # сортировка данных по возрастанию
         df['probability'] = sorted(df['probability'])
 
-
-
         self.file_method_data = 'Files/fzi.xlsx'
+        df.to_excel(self.file_method_data)
+
+    def lucia(self):
+        df = pd.read_excel('Files/valid_data.xlsx')
+        df['Пористость'] = df['Пористость'] / 100
+        df['Проницаемость'] = df['Проницаемость']
+
+        self.file_method_data = 'Files/lucia.xlsx'
         df.to_excel(self.file_method_data)
 
     def winland(self):
         df = pd.read_excel('Files/valid_data.xlsx')
         df['Пористость'] = df['Пористость'] / 100
-        df['winland'] = 10 ** (.732+.588*np.log(df['Проницаемость'])-.865*np.log(df['Пористость']))
+        df['winland'] = 10 ** (.732 + .588 * np.log(df['Проницаемость']) - .865 * np.log(df['Пористость']))
         df['winland'] = np.log(df['winland'])
-        df['probability'] = 1 / (len(df)) * (df.index+1)
+        df['probability'] = 1 / (len(df)) * (df.index + 1)
         df = df.sort_values(by='winland', ascending=True)  # сортировка данных по возрастанию
         df['probability'] = sorted(df['probability'])
 
@@ -116,17 +122,16 @@ class SheetReader:
         self.file_method_data = 'Files/winland.xlsx'
         df.to_excel(self.file_method_data)
 
-    def lucia(self):
-        print('lucia')
-
     @staticmethod
     def get_column(filename, column_name) -> []:
         df = openpyxl.load_workbook(filename).active
         column = []
         for i in range(len(df[column_name])):
-            column.append(df[column_name + str(i+1)].value)
+            column.append(df[column_name + str(i + 1)].value)
         return column
 
     def get_column_method(self, column_name) -> []:
+        print(self.file_method_data)
         df = pd.read_excel(self.file_method_data)
+
         return df[column_name]

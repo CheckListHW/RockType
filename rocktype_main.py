@@ -11,6 +11,8 @@ from fzi import fzi
 from winland import winland
 from lucia import lucia
 
+
+
 BASE_DIR = os.path.dirname(__file__)
 
 
@@ -56,7 +58,19 @@ class Window(QMainWindow):
         self.calc_RTWS_Btn.clicked.connect(self.calc_RTWS)
         self.update_chart.clicked.connect(self.update_grid)
         self.load_data_bt.clicked.connect(self.load_data)
+        self.rocktype_CB.currentTextChanged.connect(self.rocktype_CB_Changed)
+        self.rocktype_CB_Changed(self.rocktype_CB.currentText())
 
+    def rocktype_CB_Changed(self, args):
+        if args == 'Lucia (RFN)':
+            self.calc_main_btn.setEnabled(False)
+            self.calc_RTWS_Btn.setEnabled(False)
+            self.calc_rock_type_btn.clicked.connect(self.calc_main_plot)
+            return
+
+        self.calc_main_btn.setEnabled(True)
+        self.calc_RTWS_Btn.setEnabled(True)
+        self.calc_rock_type_btn.clicked.connect(self.calc_rock_type)
 
     def calc_main_plot(self):
         if hasattr(self, 'plot'):
@@ -101,8 +115,7 @@ class Window(QMainWindow):
         self.plot.draw_rock_type(ax, dots_rock_type)
 
     def winland(self):
-        self.main = winland('C:/Users/kosac/PycharmProjects/winland_R35/data/rocktype_data.xlsx', 'A', 'B', 'C', 'D', 'E', 'F', 'G')
-        #self.main = fzi(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
+        self.main = fzi(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
 
         self.plot.add_plot(get_key(self.method_names, 'winland'),
                            self.main.method, self.main.probability, 'click_add_border')
@@ -114,10 +127,13 @@ class Window(QMainWindow):
         ax.hist(self.main.method, bins=len(self.main.method))
 
     def lucia(self):
-        print('lucia')
+        self.main = lucia(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
+        dots = self.main.calc_rocktype()
+
+        ax = self.plot.add_plot(get_key(self.method_names, 'lucia'))
+        self.plot.draw_rock_type_lucia(ax, dots)
 
     def fzi(self):
-        #self.main = fzi('C:/Users/kosac/PycharmProjects/winland_R35/Files/rocktype_data.xlsx', 'A', 'B', 'C', 'D', 'E', 'F', 'G')
         self.main = fzi(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
 
         self.plot.add_plot(get_key(self.method_names, 'fzi'),

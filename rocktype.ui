@@ -201,17 +201,17 @@
                <widget class="QComboBox" name="rocktype_CB">
                 <item>
                  <property name="text">
+                  <string>Lucia (RFN)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
                   <string>FZI</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
                   <string>Winland r35</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Lucia (RFN)</string>
                  </property>
                 </item>
                 <item>

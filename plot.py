@@ -14,6 +14,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
+import data_poro
 
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, n_plot=1, nrows=None, ncols=None, **kwargs):
@@ -125,11 +126,42 @@ class PlotCanvas(FigureCanvas):
 
             rSquare = self.rSquare(yy, y1)
             plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
-                      label="y=%.4f*e^(%.3f*x)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
+                      label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
 
         plot.legend(loc="lower right")
+        plot.set_xscale('log')
         plot.set_yscale('log')
         self.draw()
+
+    def draw_rock_type_lucia(self, plot, dots):
+        plot.lines = []
+        plot.plot(data_poro.poro_05, data_poro.perm_05, ':', color='black')
+        plot.plot(data_poro.poro_15, data_poro.perm_15, ':', color='black')
+        plot.plot(data_poro.poro_25, data_poro.perm_25, ':', color='black')
+        plot.plot(data_poro.poro_4, data_poro.perm_4, ':', color='black')
+        for key in dots.keys():
+            plot.plot(dots[key][0], dots[key][1], 'o', markersize=4, color=key)
+            if len(dots[key][0]) > 1 and len(dots[key][1]) > 1:
+                x1 = numpy.array(dots[key][0])
+                y1 = numpy.array(dots[key][1])
+
+                z = scipy.optimize.curve_fit(lambda t, a, b: a * np.exp(b * t), x1, y1)
+                xx = []
+                yy = []
+
+                for i1 in range(len(x1)):
+                    xx.append(x1[i1])
+                    yy.append(self.f(z[0][0], z[0][1], x1[i1]))
+
+                rSquare = self.rSquare(yy, y1)
+                plot.plot(sorted(xx), sorted(yy), "-", color=key,
+                          label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
+        plot.legend(loc="lower right")
+        plot.set_xscale('log')
+        plot.set_yscale('log')
+        self.draw()
+
+    #def draw_rock_type_trend(self, plot, lucia):
 
     def f(self, a, b, x):
         return a * math.exp(b * x)
