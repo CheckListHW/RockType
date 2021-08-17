@@ -36,7 +36,6 @@ class fzi:
         residual_sw = SheetReader.get_column(sw_file, self.residual_sw_column_name)
 
         self.modify_current_sw = []
-        print(current_sw)
         for i in current_sw:
             if isinstance(i, float):
                 self.modify_current_sw.append(i / 100)

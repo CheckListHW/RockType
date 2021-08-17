@@ -113,11 +113,6 @@ class SheetReader:
 
         x = np.sort(df['winland'])
         y = np.arange(1, len(x) + 1) / len(x)
-        plt.plot(x, y, marker='.', linestyle='none')
-        plt.hist(x, bins=500)
-        plt.xscale('log')
-
-        plt.show()
 
         self.file_method_data = 'Files/winland.xlsx'
         df.to_excel(self.file_method_data)
@@ -131,7 +126,6 @@ class SheetReader:
         return column
 
     def get_column_method(self, column_name) -> []:
-        print(self.file_method_data)
         df = pd.read_excel(self.file_method_data)
 
         return df[column_name]

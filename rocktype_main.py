@@ -12,16 +12,7 @@ from winland import winland
 from lucia import lucia
 
 
-
 BASE_DIR = os.path.dirname(__file__)
-
-
-def excepthook(exc_type, exc_value, exc_tb):
-    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    print("Oбнаружена ошибка !:", tb)
-
-
-sys.excepthook = excepthook
 
 
 def get_key(d, value):
@@ -29,6 +20,15 @@ def get_key(d, value):
         if v == value:
             return k
     return 'Неизвестный метод'
+
+
+class SettingsWindow(QMainWindow):
+    def __init__(self):
+        super(SettingsWindow, self).__init__()
+        uic.loadUi('settings.ui', self)
+
+    def open_settings(self):
+        self.show()
 
 
 class Window(QMainWindow):
@@ -53,6 +53,8 @@ class Window(QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         uic.loadUi('rocktype.ui', self)
+
+        self.settings = SettingsWindow()
         self.calc_main_btn.clicked.connect(self.calc_main_plot)
         self.calc_rock_type_btn.clicked.connect(self.calc_rock_type)
         self.calc_RTWS_Btn.clicked.connect(self.calc_RTWS)
@@ -60,17 +62,27 @@ class Window(QMainWindow):
         self.load_data_bt.clicked.connect(self.load_data)
         self.rocktype_CB.currentTextChanged.connect(self.rocktype_CB_Changed)
         self.rocktype_CB_Changed(self.rocktype_CB.currentText())
+        self.settings_BTN.clicked.connect(self.open_settings)
+
+    def open_settings(self):
+        self.settings.open_settings()
+
+    def excepthook(self, exc_type, exc_value, exc_tb):
+        tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        self.debug_list.addItem(tb)
+        print("Oбнаружена ошибка !:", tb)
 
     def rocktype_CB_Changed(self, args):
         if args == 'Lucia (RFN)':
-            self.calc_main_btn.setEnabled(False)
-            self.calc_RTWS_Btn.setEnabled(False)
-            self.calc_rock_type_btn.clicked.connect(self.calc_main_plot)
+            self.calc_RTWS_Btn.hide()
+            self.calc_rock_type_btn.hide()
+            self.calc_main_btn.setText('Рок-тип')
             return
 
-        self.calc_main_btn.setEnabled(True)
-        self.calc_RTWS_Btn.setEnabled(True)
-        self.calc_rock_type_btn.clicked.connect(self.calc_rock_type)
+        self.calc_RTWS_Btn.show()
+        self.calc_rock_type_btn.show()
+        self.calc_main_btn.setText('Плотность / пористость')
+
 
     def calc_main_plot(self):
         if hasattr(self, 'plot'):
@@ -115,7 +127,7 @@ class Window(QMainWindow):
         self.plot.draw_rock_type(ax, dots_rock_type)
 
     def winland(self):
-        self.main = fzi(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
+        self.main = winland(self.petro_filename, 'A', 'B', 'C', 'D', 'E', 'F', 'G')
 
         self.plot.add_plot(get_key(self.method_names, 'winland'),
                            self.main.method, self.main.probability, 'click_add_border')
@@ -189,6 +201,6 @@ class Window(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = Window()
-
+    sys.excepthook = window.excepthook
     window.show()
     sys.exit(app.exec_())

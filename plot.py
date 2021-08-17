@@ -161,29 +161,13 @@ class PlotCanvas(FigureCanvas):
         plot.set_yscale('log')
         self.draw()
 
-    #def draw_rock_type_trend(self, plot, lucia):
-
     def f(self, a, b, x):
         return a * math.exp(b * x)
 
     def rSquare(self, estimations, measureds):
-        """ Compute the coefficient of determination of random data.
-        This metric gives the level of confidence about the model used to model data"""
         SEE = ((np.array(measureds) - np.array(estimations)) ** 2).sum()
         mMean = np.array(measureds).sum() / float(len(measureds))
         dErr = ((np.array(measureds) - mMean) ** 2).sum()
-
-        print(SEE)
-        print(dErr)
-
-
-        '''
-        print(SEE)
-        mMean = (np.array(measureds)).sum() / float(len(measureds))
-        print(mMean)
-        dErr = ((mMean - measureds)).sum()
-        print(dErr)
-        '''
         return 1 - (SEE / dErr)
 
     def draw_RTWS(self, plot, dots_x):
@@ -218,7 +202,7 @@ class PlotCanvas(FigureCanvas):
                         color.append(line.get_color())
                 dots.append(math.inf)
                 color.append(axes.lines[0].get_color())
-                return dots, color
+        return dots, color
 
     def plot(self):
         for i in range(self.nrows * self.ncols):
