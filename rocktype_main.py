@@ -11,7 +11,6 @@ from fzi import fzi
 from winland import winland
 from lucia import lucia
 
-
 BASE_DIR = os.path.dirname(__file__)
 
 
@@ -26,9 +25,38 @@ class SettingsWindow(QMainWindow):
     def __init__(self):
         super(SettingsWindow, self).__init__()
         uic.loadUi('settings.ui', self)
+        self.testButton_2.clicked.connect(self.push_testButton_2)
+        self.testButton_1.clicked.connect(self.push_testButton_1)
+        self.buttonBox.clicked.connect(self.exit)
+
+    def push_testButton_1(self):
+        print(self.legend_CB.checkState())
+
+    def push_testButton_2(self):
+        print(self.trend_line_CB.currentText())
+
+    def legend(self):
+        return False if (self.legend_CB.checkState()) == 0 else True
+
+    def trend_type(self):
+        return self.trend_line_CB.currentText()
+
+    def exit(self, args):
+        self.hide()
+        if hasattr(self, 'exit_func'):
+            self.exit_func()
 
     def open_settings(self):
         self.show()
+
+    def get_all_parametrs(self):
+        return {
+            'legend': self.legend(),
+            'trend_type': self.trend_type(),
+        }
+
+    def set_exit_func(self, func):
+        self.exit_func = func
 
 
 class Window(QMainWindow):
@@ -57,12 +85,23 @@ class Window(QMainWindow):
         self.settings = SettingsWindow()
         self.calc_main_btn.clicked.connect(self.calc_main_plot)
         self.calc_rock_type_btn.clicked.connect(self.calc_rock_type)
-        self.calc_RTWS_Btn.clicked.connect(self.calc_RTWS)
+        self.calc_RTWS_btn.clicked.connect(self.calc_RTWS)
         self.update_chart.clicked.connect(self.update_grid)
         self.load_data_bt.clicked.connect(self.load_data)
         self.rocktype_CB.currentTextChanged.connect(self.rocktype_CB_Changed)
         self.rocktype_CB_Changed(self.rocktype_CB.currentText())
+        self.test_btn.clicked.connect(self.test)
         self.settings_BTN.clicked.connect(self.open_settings)
+        self.settings.set_exit_func(self.update)
+        self.debug()
+
+    def test(self):
+        print('test')
+        self.plot.update_figure()
+        print('test')
+
+    def debug(self):
+        self.petro_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
 
     def open_settings(self):
         self.settings.open_settings()
@@ -74,15 +113,25 @@ class Window(QMainWindow):
 
     def rocktype_CB_Changed(self, args):
         if args == 'Lucia (RFN)':
-            self.calc_RTWS_Btn.hide()
+            self.calc_RTWS_btn.hide()
             self.calc_rock_type_btn.hide()
             self.calc_main_btn.setText('Рок-тип')
             return
 
-        self.calc_RTWS_Btn.show()
+        self.calc_RTWS_btn.show()
         self.calc_rock_type_btn.show()
         self.calc_main_btn.setText('Плотность / пористость')
 
+    def update_grid(self):
+        if self.autoGridSize.checkState() == 0:
+            n_rows = int(self.n_rows_CB.value())
+            n_cols = int(self.n_cols_CB.value())
+        else:
+            n_rows, n_cols = self.plot.calc_auto_grid_size()
+            self.n_rows_CB.setValue(n_rows)
+            self.n_cols_CB.setValue(n_cols)
+        self.plot.set_grid_size(nrows=n_rows, ncols=n_cols)
+        self.plot.update_grid()
 
     def calc_main_plot(self):
         if hasattr(self, 'plot'):
@@ -98,16 +147,10 @@ class Window(QMainWindow):
         calc_method = getattr(self, current_method_name)
         calc_method()
 
-    def update_grid(self, ):
-        if self.autoGridSize.checkState() == 0:
-            n_rows = int(self.n_rows_CB.value())
-            n_cols = int(self.n_cols_CB.value())
-        else:
-            n_rows, n_cols = self.plot.calc_auto_grid_size()
-            self.n_rows_CB.setValue(n_rows)
-            self.n_cols_CB.setValue(n_cols)
-        self.plot.set_grid_size(nrows=n_rows, ncols=n_cols)
-        self.plot.update_grid()
+    def update(self):
+        parametrs = self.settings.get_all_parametrs()
+        for item in parametrs.items():
+            self.plot.set_parametrs(item[0], item[1])
 
     def calc_RTWS(self):
         self.RTWS = 'current'
@@ -135,7 +178,7 @@ class Window(QMainWindow):
         ax = self.plot.add_plot('R35 Winland histogram')
 
         ax.set_xscale('log')
-        ax.plot(self.main.method, self.main.probability,  marker='.', linestyle='none')
+        ax.plot(self.main.method, self.main.probability, marker='.', linestyle='none')
         ax.hist(self.main.method, bins=len(self.main.method))
 
     def lucia(self):

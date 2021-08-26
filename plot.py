@@ -16,8 +16,15 @@ from matplotlib.figure import Figure
 
 import data_poro
 
+
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, n_plot=1, nrows=None, ncols=None, **kwargs):
+        self.parametrs = {'trend_type': 'exp'}
+
+        for key, value in kwargs.items():
+            if key in self.parametrs:
+                self.parametrs[key] = value
+
         self.plot_type = {
             'click_add_border': ' (дважды ЛКМ добавить границу) (дважды ПКМ удалить)',
         }
@@ -36,6 +43,13 @@ class PlotCanvas(FigureCanvas):
         self.mainLayout.addWidget(self)
 
         self.plot_number()
+
+    def get_parametrs(self, name):
+        if self.parametrs.get(name) is not None:
+            return self.parametrs.get(name)
+
+    def set_parametrs(self, name, value):
+        self.parametrs[name] = value
 
     def reset(self):
         self.nrows = 1
@@ -80,6 +94,9 @@ class PlotCanvas(FigureCanvas):
 
         self.draw()
 
+    def update_figure(self):
+        self.draw()
+
     def add_function_to_plot(self, plot, plot_type):
         if plot_type == 'click_add_border':
             self.plot_click_add_border.append(plot)
@@ -112,26 +129,42 @@ class PlotCanvas(FigureCanvas):
             x1 = numpy.array(d['x1'])
             y1 = numpy.array(d['y1'])
 
-            #линейная апросисимация
-            #z = numpy.polyfit(x1, y1, 2)
-            #p = numpy.poly1d(z)
+            if self.get_parametrs('trend_type') == 'exp':
+                z = scipy.optimize.curve_fit(lambda t, a, b: a * np.exp(b * t), x1, y1)
+                xx = []
+                yy = []
 
-            z = scipy.optimize.curve_fit(lambda t, a, b: a*np.exp(b*t),  x1,  y1)
-            xx = []
-            yy = []
+                for i1 in range(len(x1)):
+                    xx.append(x1[i1])
+                    yy.append(self.f(z[0][0], z[0][1], x1[i1]))
 
-            for i1 in range(len(x1)):
-                xx.append(x1[i1])
-                yy.append(self.f(z[0][0], z[0][1], x1[i1]))
+                rSquare = self.rSquare(yy, y1)
+                plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
+                          label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
 
-            rSquare = self.rSquare(yy, y1)
-            plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
-                      label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
+            if self.get_parametrs('trend_type') == 'line':
+                z = numpy.polyfit(x1, y1, 1)
+                p = numpy.poly1d(z)
+                xx = []
+                yy = []
+                for i1 in range(len(x1)):
+                    if p(x1[i1]) > min(y1):
+                        xx.append(x1[i1])
+                        yy.append(p(x1[i1]))
+                plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
+                          label="y=%.6fx+(%.6f)" % (z[0], z[1]))
 
-        plot.legend(loc="lower right")
+        self.show_legend(plot)
+
         plot.set_xscale('log')
         plot.set_yscale('log')
         self.draw()
+
+    def show_legend(self, plot):
+        if self.get_parametrs('legend') is True:
+            plot.legend(loc="lower right")
+        else:
+            plot.legend().set_visible(False)
 
     def draw_rock_type_lucia(self, plot, dots):
         plot.lines = []
@@ -145,6 +178,7 @@ class PlotCanvas(FigureCanvas):
                 x1 = numpy.array(dots[key][0])
                 y1 = numpy.array(dots[key][1])
 
+            if self.get_parametrs('trend_type') == 'exp':
                 z = scipy.optimize.curve_fit(lambda t, a, b: a * np.exp(b * t), x1, y1)
                 xx = []
                 yy = []
@@ -156,7 +190,20 @@ class PlotCanvas(FigureCanvas):
                 rSquare = self.rSquare(yy, y1)
                 plot.plot(sorted(xx), sorted(yy), "-", color=key,
                           label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
-        plot.legend(loc="lower right")
+
+            if self.get_parametrs('trend_type') == 'line':
+                z = numpy.polyfit(x1, y1, 1)
+                p = numpy.poly1d(z)
+                xx = []
+                yy = []
+                for i1 in range(len(x1)):
+                    if p(x1[i1]) > min(y1):
+                        xx.append(x1[i1])
+                        yy.append(p(x1[i1]))
+                plot.plot(sorted(xx), sorted(yy), "-", color=key,
+                          label="y=%.6fx+(%.6f)" % (z[0], z[1]))
+
+        self.show_legend(plot)
         plot.set_xscale('log')
         plot.set_yscale('log')
         self.draw()
@@ -174,20 +221,16 @@ class PlotCanvas(FigureCanvas):
         plot.lines = []
         borders, colors = self.get_borders_main_plot()
 
-        for rock_type_n in range(1, len(borders) + 1):
-            if rock_type_n - 1 < len(borders):
+        for rock_type_n in range(0, len(borders)):
+            if rock_type_n < len(borders):
                 rock_type_value = str(round(borders[rock_type_n - 1], 2))
             else:
                 rock_type_value = str(math.inf)
+            plot.plot(dots_x[rock_type_n], [rock_type_n]*len(dots_x[rock_type_n]) + 1,
+                      '-', markersize=1, color=colors[rock_type_n],
+                      label='Rock Type ' + str(rock_type_n + 1) + ': ' + rock_type_value)
 
-            # plot.plot(1, 1, 'o', markersize=0, color=colors[rock_type_n - 1],
-            #          label='Rock Type ' + str(rock_type_n) + ': ' + rock_type_value)
-
-            step = len(dots_x) / (len(borders) + 1)
-            plot.plot([step * rock_type_n, step * (rock_type_n + 1)], [rock_type_n, rock_type_n],
-                      '-', markersize=1, color=colors[rock_type_n - 1],
-                      label='Rock Type ' + str(rock_type_n) + ': ' + rock_type_value)
-            plot.legend(loc="lower right")
+            self.show_legend(plot)
 
         self.draw()
 

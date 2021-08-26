@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>938</width>
-    <height>878</height>
+    <width>1029</width>
+    <height>888</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -231,7 +231,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="calc_RTWS_Btn">
+            <widget class="QPushButton" name="calc_RTWS_btn">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -250,6 +250,13 @@
             <widget class="QPushButton" name="settings_BTN">
              <property name="text">
               <string>Настройки</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="test_btn">
+             <property name="text">
+              <string>test</string>
              </property>
             </widget>
            </item>
@@ -382,8 +389,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>877</width>
-             <height>706</height>
+             <width>968</width>
+             <height>716</height>
             </rect>
            </property>
           </widget>
@@ -435,7 +442,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>938</width>
+     <width>1029</width>
      <height>21</height>
     </rect>
    </property>
