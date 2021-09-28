@@ -5,6 +5,7 @@ from os.path import dirname, realpath, isfile
 os.environ['BASE_DIR'] = dirname(__file__)
 BASE_DIR = os.environ['BASE_DIR']
 
+
 import sys
 from time import sleep
 from traceback import format_exception
@@ -131,8 +132,8 @@ class Window(QMainWindow, rocktype_ui):
         super().__init__()
         self.setupUi(self)
 
-        if not path.exists('Files'):
-            os.mkdir("Files")
+        if not path.exists(BASE_DIR+'/Files'):
+            os.mkdir(BASE_DIR+'/Files')
 
         self.error_window = ErrorWindow()
         self.settings = SettingsWindow()

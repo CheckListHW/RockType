@@ -61,7 +61,7 @@ class ML_FZI():
         dataset_for_ml_reindex = dataset_for_ml.set_index(arange(len(dataset_for_ml.index)))
         dataset_for_ml_reindex['FZI'] = valid_data_frame['FZI']
 
-        self.data_ml = BASE_DIR + '/Files/dadaset_for_ml.xlsx'
+        self.data_ml = self.get_ML_FZI_url('dadaset_for_ml.xlsx')
         dataset_for_ml_reindex.to_excel(self.data_ml)
 
         df = read_excel(self.data_ml)
@@ -111,15 +111,15 @@ class ML_FZI():
         b = y_train
 
         df2 = DataFrame(data={'FZI': c, 'FZI_pred': b})
-        df2.to_excel('Files/ML_FZI.xlsx')
+        df2.to_excel(self.get_ML_FZI_url('ML_FZI.xlsx'))
         self.accurancy = df2.corr()['FZI_pred']['FZI']
 
-        df2 = read_excel('Files/ML_FZI.xlsx')
+        df2 = read_excel(self.get_ML_FZI_url('ML_FZI.xlsx'))
         df2 = df2.drop(columns=['Unnamed: 0'])
         a = merge_asof(df2.sort_values('FZI'), df.sort_values('FZI'), on='FZI', direction='nearest')
         b = a.sort_values(by='MD', ascending=True)
         b = b.drop(columns=['FZI'])
-        b.to_excel(self.get_ML_FZI_url()+'/ML_FZI + geof final.xlsx')
+        b.to_excel(self.get_ML_FZI_url('ML_FZI + geof final.xlsx'))
 
 
         # графики
@@ -130,7 +130,7 @@ class ML_FZI():
         plt.ylabel('loss')
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
-        plt.savefig('Files/model_loss.png')
+        plt.savefig(self.get_ML_FZI_url('model_loss.png'))
 
         plt.figure(figsize=(8, 80))
         d = x_test
@@ -140,7 +140,7 @@ class ML_FZI():
         plt.title('Оценка результатов(y_test)')
         plt.xlabel('Time')
         plt.ylabel('Flowrate')
-        plt.savefig('Files/Оценка_результатов.png')
+        plt.savefig(self.get_ML_FZI_url('Оценка_результатов.png'))
 
         plt.figure(figsize=(8, 80))
         d = x_train
@@ -150,13 +150,13 @@ class ML_FZI():
         plt.title('Оценка результатов')
         plt.xlabel('Time')
         plt.ylabel('Flowrate')
-        plt.savefig('Files/Оценка_результатов(y_train).png')
+        plt.savefig(self.get_ML_FZI_url('Оценка_результатов(y_train).png'))
 
         if self.finished is not None:
             self.finished()
 
-    def get_ML_FZI_url(self):
-        return BASE_DIR+'/Files'
+    def get_ML_FZI_url(self, filename=''):
+        return BASE_DIR+'/Files/{file}'.format(file=filename)
 
     def get_accurancy(self):
         if hasattr(self, 'accurancy'):

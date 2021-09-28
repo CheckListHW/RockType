@@ -12,6 +12,7 @@ import data_poro
 
 BASE_DIR = os.environ['BASE_DIR']
 
+
 def convert_float(value):
     try:
         return float(value)
@@ -70,7 +71,7 @@ class SheetReader:
                 row_number_new_sheet += 1
             row_number_old_sheet += 1
         self.valid_data = BASE_DIR + '/Files/valid_data.xlsx'
-        self.FZI.save('Files/valid_data.xlsx')
+        self.FZI.save(self.valid_data)
 
     def _row_valid(self, row_number: int) -> bool:
         if self.sheet[self.depth_column_name + str(row_number)].value == \
@@ -97,7 +98,7 @@ class SheetReader:
         return True
 
     def fzi(self):
-        df = read_excel('Files/valid_data.xlsx')
+        df = read_excel(BASE_DIR + '/Files/valid_data.xlsx')
         df['Пористость'] = df['Пористость'] / 100
         df['porosity*'] = df['Пористость'] / (1 - df['Пористость'])
         df['корень'] = (df['Проницаемость'] / df['Пористость']) ** 0.5
@@ -108,19 +109,19 @@ class SheetReader:
         df = df.sort_values(by='Log(FZI)', ascending=True)  # сортировка данных по возрастанию
         df['probability'] = sorted(df['probability'])
 
-        self.file_method_data = 'Files/fzi.xlsx'
+        self.file_method_data = BASE_DIR + '/Files/fzi.xlsx'
         df.to_excel(self.file_method_data)
 
     def lucia(self):
-        df = read_excel('Files/valid_data.xlsx')
+        df = read_excel(BASE_DIR + '/Files/valid_data.xlsx')
         df['Пористость'] = df['Пористость'] / 100
         df['Проницаемость'] = df['Проницаемость']
 
-        self.file_method_data = 'Files/lucia.xlsx'
+        self.file_method_data = BASE_DIR + '/Files/lucia.xlsx'
         df.to_excel(self.file_method_data)
 
     def winland(self):
-        df = read_excel('Files/valid_data.xlsx')
+        df = read_excel(BASE_DIR + '/Files/valid_data.xlsx')
         df['Пористость'] = df['Пористость'] / 100
         df['winland'] = 10 ** (.732 + .588 * log(df['Проницаемость']) - .865 * log(df['Пористость']))
         df['winland'] = log(df['winland'])
@@ -131,7 +132,7 @@ class SheetReader:
         x = sort(df['winland'])
         y = arange(1, len(x) + 1) / len(x)
 
-        self.file_method_data = 'Files/winland.xlsx'
+        self.file_method_data = BASE_DIR + '/Files/winland.xlsx'
         df.to_excel(self.file_method_data)
 
     @staticmethod
@@ -245,25 +246,25 @@ class Lucia:
         dots_rock_type = {'orange': [[], []], 'green': [[], []], 'blue': [[], []], 'red': [[], []], 'grey': [[], []]}
 
         for i in range(0, len(self.poro)):
-            y1 = np.exp((22.56-12.08*np.log(4.0)) + ((8.671-3.603*np.log(4.0))*np.log(self.poro[i])))
+            y1 = np.exp((22.56 - 12.08 * np.log(4.0)) + ((8.671 - 3.603 * np.log(4.0)) * np.log(self.poro[i])))
             if self.pron[i] < y1:
                 dots_rock_type['orange'][0].append(self.poro[i])
                 dots_rock_type['orange'][1].append(self.pron[i])
                 continue
 
-            y2 = np.exp((22.56-12.08*np.log(2.5)) + ((8.671-3.603*np.log(2.5))*np.log(self.poro[i])))
+            y2 = np.exp((22.56 - 12.08 * np.log(2.5)) + ((8.671 - 3.603 * np.log(2.5)) * np.log(self.poro[i])))
             if self.pron[i] < y2:
                 dots_rock_type['green'][0].append(self.poro[i])
                 dots_rock_type['green'][1].append(self.pron[i])
                 continue
 
-            y3 = np.exp((22.56-12.08*np.log(1.5)) + ((8.671-3.603*np.log(1.5))*np.log(self.poro[i])))
+            y3 = np.exp((22.56 - 12.08 * np.log(1.5)) + ((8.671 - 3.603 * np.log(1.5)) * np.log(self.poro[i])))
             if self.pron[i] < y3:
                 dots_rock_type['blue'][0].append(self.poro[i])
                 dots_rock_type['blue'][1].append(self.pron[i])
                 continue
 
-            y4 = np.exp((22.56-12.08*np.log(0.5)) + ((8.671-3.603*np.log(0.5))*np.log(self.poro[i])))
+            y4 = np.exp((22.56 - 12.08 * np.log(0.5)) + ((8.671 - 3.603 * np.log(0.5)) * np.log(self.poro[i])))
             if self.pron[i] < y4:
                 dots_rock_type['red'][0].append(self.poro[i])
                 dots_rock_type['red'][1].append(self.pron[i])
