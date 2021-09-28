@@ -1,23 +1,19 @@
-import math
-import random
-from math import ceil
+from math import ceil, inf, exp
+from random import random
 
-import numpy
-import numpy as np
-import pandas as pd
-import scipy
+from numpy import array, exp, polyfit, poly1d
+from pandas import DataFrame
 from scipy.optimize import curve_fit
 
 from PyQt5 import QtWidgets
 from matplotlib import gridspec
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
 import data_poro
 
 
-class PlotCanvas(FigureCanvas):
+class PlotCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, n_plot=1, nrows=None, ncols=None, **kwargs):
         self.parametrs = {'trend_type': 'exp'}
 
@@ -32,11 +28,11 @@ class PlotCanvas(FigureCanvas):
         self.set_parameters(kwargs)
         self.set_grid_size(n_plot, nrows, ncols)
 
-        FigureCanvas.__init__(self, Figure(tight_layout=True))
+        FigureCanvasQTAgg.__init__(self, Figure(tight_layout=True))
 
         self.mpl_connect('button_press_event', self.mouse_click)
 
-        self.toolbar = NavigationToolbar(self, parent)
+        self.toolbar = NavigationToolbar2QT(self, parent)
 
         self.mainLayout = QtWidgets.QGridLayout(parent)
         self.mainLayout.addWidget(self.toolbar)
@@ -119,18 +115,18 @@ class PlotCanvas(FigureCanvas):
             if i < len(rock_type_borders):
                 rock_type_value = str(round(rock_type_borders[i], 2))
             else:
-                rock_type_value = str(math.inf)
+                rock_type_value = str(inf)
             plot.plot(0, 0, 'o', markersize=5, color=rock_type_colors[i],
                       label='Rock Type ' + str(i + 1) + ': ' + rock_type_value)
             for dot in dots[i]:
                 plot.plot(dot[0], dot[1], 'o', markersize=4, color=rock_type_colors[i])
 
-            d = pd.DataFrame(dots[i], columns=['x1', 'y1'])
-            x1 = numpy.array(d['x1'])
-            y1 = numpy.array(d['y1'])
+            d = DataFrame(dots[i], columns=['x1', 'y1'])
+            x1 = array(d['x1'])
+            y1 = array(d['y1'])
 
             if self.get_parametrs('trend_type') == 'exp':
-                z = scipy.optimize.curve_fit(lambda t, a, b: a * np.exp(b * t), x1, y1)
+                z = curve_fit(lambda t, a, b: a * exp(b * t), x1, y1)
                 xx = []
                 yy = []
 
@@ -143,8 +139,8 @@ class PlotCanvas(FigureCanvas):
                           label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
 
             if self.get_parametrs('trend_type') == 'line':
-                z = numpy.polyfit(x1, y1, 1)
-                p = numpy.poly1d(z)
+                z = polyfit(x1, y1, 1)
+                p = poly1d(z)
                 xx = []
                 yy = []
                 for i1 in range(len(x1)):
@@ -175,33 +171,33 @@ class PlotCanvas(FigureCanvas):
         for key in dots.keys():
             plot.plot(dots[key][0], dots[key][1], 'o', markersize=4, color=key)
             if len(dots[key][0]) > 1 and len(dots[key][1]) > 1:
-                x1 = numpy.array(dots[key][0])
-                y1 = numpy.array(dots[key][1])
+                x1 = array(dots[key][0])
+                y1 = array(dots[key][1])
 
-            if self.get_parametrs('trend_type') == 'exp':
-                z = scipy.optimize.curve_fit(lambda t, a, b: a * np.exp(b * t), x1, y1)
-                xx = []
-                yy = []
+                if self.get_parametrs('trend_type') == 'exp':
+                    z = curve_fit(lambda t, a, b: a * exp(b * t), x1, y1)
+                    xx = []
+                    yy = []
 
-                for i1 in range(len(x1)):
-                    xx.append(x1[i1])
-                    yy.append(self.f(z[0][0], z[0][1], x1[i1]))
-
-                rSquare = self.rSquare(yy, y1)
-                plot.plot(sorted(xx), sorted(yy), "-", color=key,
-                          label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
-
-            if self.get_parametrs('trend_type') == 'line':
-                z = numpy.polyfit(x1, y1, 1)
-                p = numpy.poly1d(z)
-                xx = []
-                yy = []
-                for i1 in range(len(x1)):
-                    if p(x1[i1]) > min(y1):
+                    for i1 in range(len(x1)):
                         xx.append(x1[i1])
-                        yy.append(p(x1[i1]))
-                plot.plot(sorted(xx), sorted(yy), "-", color=key,
-                          label="y=%.6fx+(%.6f)" % (z[0], z[1]))
+                        yy.append(self.f(z[0][0], z[0][1], x1[i1]))
+
+                    rSquare = self.rSquare(yy, y1)
+                    plot.plot(sorted(xx), sorted(yy), "-", color=key,
+                              label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
+
+                elif self.get_parametrs('trend_type') == 'line':
+                    z = polyfit(x1, y1, 1)
+                    p = poly1d(z)
+                    xx = []
+                    yy = []
+                    for i1 in range(len(x1)):
+                        if p(x1[i1]) > min(y1):
+                            xx.append(x1[i1])
+                            yy.append(p(x1[i1]))
+                    plot.plot(sorted(xx), sorted(yy), "-", color=key,
+                              label="y=%.6fx+(%.6f)" % (z[0], z[1]))
 
         self.show_legend(plot)
         plot.set_xscale('log')
@@ -209,12 +205,12 @@ class PlotCanvas(FigureCanvas):
         self.draw()
 
     def f(self, a, b, x):
-        return a * math.exp(b * x)
+        return a * exp(b * x)
 
     def rSquare(self, estimations, measureds):
-        SEE = ((np.array(measureds) - np.array(estimations)) ** 2).sum()
-        mMean = np.array(measureds).sum() / float(len(measureds))
-        dErr = ((np.array(measureds) - mMean) ** 2).sum()
+        SEE = ((array(measureds) - array(estimations)) ** 2).sum()
+        mMean = array(measureds).sum() / float(len(measureds))
+        dErr = ((array(measureds) - mMean) ** 2).sum()
         return 1 - (SEE / dErr)
 
     def draw_RTWS(self, plot, dots_x):
@@ -225,8 +221,8 @@ class PlotCanvas(FigureCanvas):
             if rock_type_n < len(borders):
                 rock_type_value = str(round(borders[rock_type_n - 1], 2))
             else:
-                rock_type_value = str(math.inf)
-            plot.plot(dots_x[rock_type_n], [rock_type_n]*len(dots_x[rock_type_n]) + 1,
+                rock_type_value = str(inf)
+            plot.plot(dots_x[rock_type_n], [rock_type_n]*(len(dots_x[rock_type_n])),
                       '-', markersize=1, color=colors[rock_type_n],
                       label='Rock Type ' + str(rock_type_n + 1) + ': ' + rock_type_value)
 
@@ -243,13 +239,13 @@ class PlotCanvas(FigureCanvas):
                     if len(line._x) < 3:
                         dots.append(line._x[0])
                         color.append(line.get_color())
-                dots.append(math.inf)
+                dots.append(inf)
                 color.append(axes.lines[0].get_color())
         return dots, color
 
     def plot(self):
         for i in range(self.nrows * self.ncols):
-            data = [random.random() for i in range(25)]
+            data = [random() for i in range(25)]
             ax = self.figure.add_subplot(self.nrows, self.ncols, i + 1)
             ax.plot(data)
             ax.set_title('PyQt Matplotlib Example ' + str(i + 1))
