@@ -1,10 +1,8 @@
 import os
-from os import startfile, path
-from os.path import dirname, realpath, isfile
+import subprocess
 
-os.environ['BASE_DIR'] = dirname(__file__)
+os.environ['BASE_DIR'] = os.path.dirname(__file__)
 BASE_DIR = os.environ['BASE_DIR']
-
 
 import sys
 from time import sleep
@@ -129,7 +127,7 @@ class Window(QMainWindow):
         super(Window, self).__init__()
         uic.loadUi('ui/rocktype.ui', self)
 
-        if not path.exists('Files'):
+        if not os.path.exists('Files'):
             os.mkdir("Files")
 
         self.error_window = ErrorWindow()
@@ -149,14 +147,14 @@ class Window(QMainWindow):
         self.settings.set_exit_func(self.update)
 
         self.test_btn.hide()
-        # self.debug()
+        self.debug()
 
     def check_before_start_ml(self):
         if not hasattr(self, 'gis_filename'):
             self.error_window.open('Необходимо загрузить файл: ГИСы')
             return False
 
-        if not isfile(self.gis_filename):
+        if not os.path.isfile(self.gis_filename):
             self.error_window.open('По указному пути не удалось найти ('
                                    + self.gis_filename + ') файл: ГИСы')
             return False
@@ -165,7 +163,7 @@ class Window(QMainWindow):
             self.error_window.open('Необходимо загрузить файл: Петрография')
             return False
 
-        if not isfile(self.petro_filename):
+        if not os.path.isfile(self.petro_filename):
             self.error_window.open('По указному пути не удалось найти ('
                                    + self.petro_filename + ') файл: Петрография')
             return False
@@ -209,8 +207,12 @@ class Window(QMainWindow):
         if finished:
             self.accuracy_label_value.setText(str(self.ml.get_accurancy()))
             file_dir = self.ml.get_ML_FZI_url()
-            file_dir = realpath(file_dir)
-            startfile(file_dir)
+            self.file_save_lbl.setText(str(self.ml.get_ML_FZI_url()))
+            if sys.platform == 'win32':
+                os.startfile(os.path.realpath(file_dir))
+            else:
+                subprocess.call(["xdg-open", file_dir])
+
 
     def signal_pb(self, msg):
         self.ml_pb.setValue(int(msg))
@@ -219,8 +221,8 @@ class Window(QMainWindow):
         self.plot.update_figure()
 
     def debug(self):
-        self.gis_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/gis.xlsx'
-        self.petro_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+        self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+        self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
         self.gis_frame = pandas.read_excel(self.gis_filename)
 
         for name in self.ml_default_column:
