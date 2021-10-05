@@ -82,6 +82,7 @@ class ML_FZI():
             GK = concatenate((GK, a), axis=0)
 
         x_train, x_test, y_train, y_test = train_test_split(GK, FZI_1, test_size=0.30, random_state=42)
+
         model = Sequential()
         model.add(LSTM(200, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
         model.add(LSTM(200, return_sequences=False))
@@ -106,6 +107,8 @@ class ML_FZI():
                             callbacks=callbacks, validation_split=0.2)
 
         b_model = load_model('LSTM_reg_1.h5')
+
+        print('b_model')
 
         c = concatenate(b_model.predict(x_train))
         b = y_train

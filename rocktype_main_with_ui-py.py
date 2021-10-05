@@ -152,7 +152,7 @@ class Window(QMainWindow, rocktype_ui):
         self.settings.set_exit_func(self.update)
 
         self.test_btn.hide()
-        # self.debug()
+        self.debug()
 
     def check_before_start_ml(self):
         if not hasattr(self, 'gis_filename'):
