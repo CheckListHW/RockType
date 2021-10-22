@@ -1,22 +1,30 @@
 import os
-from math import inf
-
 import numpy as np
-import pandas
 import pandas as pd
+import random as python_random
+import tensorflow as tf
+
+
 from matplotlib import pyplot as plt
 from numpy import arange
 from pandas import read_excel
+from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.models import Sequential
+from numpy.random import seed
+from math import inf
 
 os.environ['BASE_DIR'] = os.path.dirname(__file__)
+BASE_DIR = os.environ['BASE_DIR']
 
 from rocktype_method import SheetReader
 
-BASE_DIR = os.environ['BASE_DIR']
+seed(42)
+python_random.seed(42)
+plt.style.use('fivethirtyeight')
+
 
 class ML_FZI():
     def __init__(self, petro_filename=None, gis_filename=None, batch_size=128, on_finished=None):
@@ -57,18 +65,17 @@ class ML_FZI():
         return None
 
     def prepare_train_data(self, df, cor_list, limit):
-        data_array = np.zeros((0, len(cor_list), limit * 2 + 1))
+        data_array = self.prepare_data(df, cor_list, limit)
         h = limit + 1
         d = len(df.FZI.to_numpy()) - limit + 1
         FZI = df.FZI.to_numpy()[h:d]
-        for i in np.arange(limit + 1, len(df.FZI.to_numpy()) - limit + 1):
-            arr = [np.reshape(df[cor].to_numpy()[i - limit - 1:i + limit], (1, limit * 2 + 1)) for cor in cor_list]
-            a = np.reshape(np.array(arr), (len(cor_list), 1 + limit * 2))
-            a = np.reshape(a, (1, len(cor_list), limit * 2 + 1))
-            data_array = np.concatenate((data_array, a), axis=0)
         return data_array, FZI
 
     def prepare_data(self, df, cor_list, limit):
+        for c in cor_list:
+            scaler = preprocessing.MinMaxScaler(feature_range=(0, 100))
+            df[[c]] = scaler.fit_transform(df[[c]])
+
         data_array = np.zeros((0, len(cor_list), limit * 2 + 1))
         h = limit + 1
         d = len(df.FZI.to_numpy()) - limit + 1
@@ -80,16 +87,15 @@ class ML_FZI():
         return data_array
 
     def predict_FZI(self, model, df, cor_list, limit):
-        predictions = [None] * limit + [i[0] for i in model.predict(self.prepare_data(df, cor_list, limit))] + [
-            None] * limit
+        predictions = [None] * limit + [i[0] for i in model.predict(self.prepare_data(df, cor_list, limit))] + [None] * limit
         df['FZI_predictions'] = predictions
         cors = ['MD'] + cor_list + ['FZI_predictions']
         df[cors].to_excel(self.get_ML_FZI_url('FZI_predictions.xlsx'))
 
     def start(self):
         wb_fes = SheetReader('fzi', self.petro_filename, 'A', 'B', 'C', 'D', 'E')
-        valid_data_frame = pandas.read_excel(wb_fes.file_method_data)
-        gis_data_frame = pandas.read_excel(self.gis_filename)
+        valid_data_frame = pd.read_excel(wb_fes.file_method_data)
+        gis_data_frame = pd.read_excel(self.gis_filename)
 
         valid_rows = self.prepare_dataset_for_ml(valid_data_frame['Глубина'], gis_data_frame['MD'])
         dataset_for_ml = gis_data_frame.iloc[valid_rows]
@@ -107,15 +113,13 @@ class ML_FZI():
         limit = 20
         data_array, FZI = self.prepare_train_data(df, cor_list, limit)
 
-        x_train, x_test, y_train, y_test = train_test_split(data_array, FZI, test_size=0.30, random_state=42)
+        x_train, x_test, y_train, y_test = train_test_split(data_array, FZI, test_size=0.15, random_state=42)
 
+        tf.random.set_seed(42)
         model = Sequential()
-        model.add(LSTM(200, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
-        model.add(LSTM(200, return_sequences=False))
+        model.add(LSTM(15, return_sequences=False, input_shape=(x_train.shape[1], x_train.shape[2])))
         model.add(Dropout(0.5))
-        model.add(Dense(100))
-        model.add(Dropout(0.25))
-        model.add(Dense(50))
+        model.add(Dense(10, activation='relu'))
         model.add(Dense(1))
 
         model.compile(optimizer='adam', loss='mean_squared_error')
@@ -128,9 +132,13 @@ class ML_FZI():
                 monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
             ), ]
 
-        history = model.fit(x_train, y_train, batch_size=128, epochs=18, callbacks=callbacks, validation_split=0.2)
+        history = model.fit(x_train, y_train, batch_size=16, epochs=500, callbacks=callbacks, validation_split=0.15)
 
-        model = keras.models.load_model('model/LSTM_reg_1.h5')
+        model.evaluate(x_test, y_test), model.evaluate(x_train, y_train)
+
+        b_model = keras.models.load_model('model/LSTM_reg_1.h5')
+        b_model.evaluate(x_test, y_test)
+        b_model.evaluate(x_train, y_train)
         df = pd.read_excel("gis.xlsx", index_col=0)
         self.predict_FZI(model, df, cor_list, limit)
 
