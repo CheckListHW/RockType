@@ -1,20 +1,18 @@
 import os
 from math import inf
-from os.path import dirname, isfile
 
 import numpy as np
 import pandas
+import pandas as pd
 from matplotlib import pyplot as plt
-from numpy import array, zeros, reshape, append, arange, concatenate
-
-from pandas import read_excel, merge_asof, DataFrame
-
+from numpy import arange
+from pandas import read_excel
 from sklearn.model_selection import train_test_split
-
+from tensorflow import keras
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.models import load_model
-import tensorflow.keras.callbacks as keras_callbacks
+
+os.environ['BASE_DIR'] = os.path.dirname(__file__)
 
 from rocktype_method import SheetReader
 
@@ -50,6 +48,44 @@ class ML_FZI():
 
         return dataset_for_ml
 
+    def get_ML_FZI_url(self, filename=''):
+        return BASE_DIR+'/Files/{file}'.format(file=filename)
+
+    def get_accurancy(self):
+        if hasattr(self, 'accurancy'):
+            return abs(self.accurancy)
+        return None
+
+    def prepare_train_data(self, df, cor_list, limit):
+        data_array = np.zeros((0, len(cor_list), limit * 2 + 1))
+        h = limit + 1
+        d = len(df.FZI.to_numpy()) - limit + 1
+        FZI = df.FZI.to_numpy()[h:d]
+        for i in np.arange(limit + 1, len(df.FZI.to_numpy()) - limit + 1):
+            arr = [np.reshape(df[cor].to_numpy()[i - limit - 1:i + limit], (1, limit * 2 + 1)) for cor in cor_list]
+            a = np.reshape(np.array(arr), (len(cor_list), 1 + limit * 2))
+            a = np.reshape(a, (1, len(cor_list), limit * 2 + 1))
+            data_array = np.concatenate((data_array, a), axis=0)
+        return data_array, FZI
+
+    def prepare_data(self, df, cor_list, limit):
+        data_array = np.zeros((0, len(cor_list), limit * 2 + 1))
+        h = limit + 1
+        d = len(df.FZI.to_numpy()) - limit + 1
+        for i in np.arange(limit + 1, len(df.FZI.to_numpy()) - limit + 1):
+            arr = [np.reshape(df[cor].to_numpy()[i - limit - 1:i + limit], (1, limit * 2 + 1)) for cor in cor_list]
+            a = np.reshape(np.array(arr), (len(cor_list), 1 + limit * 2))
+            a = np.reshape(a, (1, len(cor_list), limit * 2 + 1))
+            data_array = np.concatenate((data_array, a), axis=0)
+        return data_array
+
+    def predict_FZI(self, model, df, cor_list, limit):
+        predictions = [None] * limit + [i[0] for i in model.predict(self.prepare_data(df, cor_list, limit))] + [
+            None] * limit
+        df['FZI_predictions'] = predictions
+        cors = ['MD'] + cor_list + ['FZI_predictions']
+        df[cors].to_excel(self.get_ML_FZI_url('FZI_predictions.xlsx'))
+
     def start(self):
         wb_fes = SheetReader('fzi', self.petro_filename, 'A', 'B', 'C', 'D', 'E')
         valid_data_frame = pandas.read_excel(wb_fes.file_method_data)
@@ -61,27 +97,17 @@ class ML_FZI():
         dataset_for_ml_reindex = dataset_for_ml.set_index(arange(len(dataset_for_ml.index)))
         dataset_for_ml_reindex['FZI'] = valid_data_frame['FZI']
 
-        self.data_ml = self.get_ML_FZI_url('dadaset_for_ml.xlsx')
+        self.data_ml = self.get_ML_FZI_url('dataset_for_ml.xlsx')
         dataset_for_ml_reindex.to_excel(self.data_ml)
 
         df = read_excel(self.data_ml)
         df = df.drop(columns=['Unnamed: 0'])
 
-        c = 20
-        FZI_1 = array([])
-        GK = zeros((0, 6, c * 2 + 1))
-        for i in arange(c + 1, len(df.FZI.to_numpy()) - c + 1):
-            FZI_1 = append(FZI_1, df.FZI.to_numpy()[i])
-            a = reshape(array([[reshape(df.GK.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))],
-                                     [reshape(df.BK.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))],
-                                     [reshape(df.RHOB.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))],
-                                     [reshape(df.IK.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))],
-                                     [reshape(df.DT.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))],
-                                     [reshape(df.NGK.to_numpy()[i - c - 1:i + c], (1, c * 2 + 1))]]), (6, 1 + c * 2))
-            a = reshape(a, (1, 6, 41))
-            GK = concatenate((GK, a), axis=0)
+        cor_list = ['GK', 'BK', 'RHOB', 'IK', 'DT', 'NGK']
+        limit = 20
+        data_array, FZI = self.prepare_train_data(df, cor_list, limit)
 
-        x_train, x_test, y_train, y_test = train_test_split(GK, FZI_1, test_size=0.30, random_state=42)
+        x_train, x_test, y_train, y_test = train_test_split(data_array, FZI, test_size=0.30, random_state=42)
 
         model = Sequential()
         model.add(LSTM(200, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
@@ -95,35 +121,18 @@ class ML_FZI():
         model.compile(optimizer='adam', loss='mean_squared_error')
 
         callbacks = [
-            keras_callbacks.ModelCheckpoint(
-                "LSTM_reg_1.h5", save_best_only=True, monitor="val_loss"
+            keras.callbacks.ModelCheckpoint(
+                "model/LSTM_reg_1.h5", save_best_only=True, monitor="val_loss"
             ),
-            keras_callbacks.ReduceLROnPlateau(
+            keras.callbacks.ReduceLROnPlateau(
                 monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
             ), ]
 
-        # скорость обучения быстрее если batch_size больше
-        history = model.fit(x_train, y_train, batch_size=self.batch_size, epochs=18,
-                            callbacks=callbacks, validation_split=0.2)
+        history = model.fit(x_train, y_train, batch_size=128, epochs=18, callbacks=callbacks, validation_split=0.2)
 
-        b_model = load_model('LSTM_reg_1.h5')
-
-        print('b_model')
-
-        c = concatenate(b_model.predict(x_train))
-        b = y_train
-
-        df2 = DataFrame(data={'FZI': c, 'FZI_pred': b})
-        df2.to_excel(self.get_ML_FZI_url('ML_FZI.xlsx'))
-        self.accurancy = df2.corr()['FZI_pred']['FZI']
-
-        df2 = read_excel(self.get_ML_FZI_url('ML_FZI.xlsx'))
-        df2 = df2.drop(columns=['Unnamed: 0'])
-        a = merge_asof(df2.sort_values('FZI'), df.sort_values('FZI'), on='FZI', direction='nearest')
-        b = a.sort_values(by='MD', ascending=True)
-        b = b.drop(columns=['FZI'])
-        b.to_excel(self.get_ML_FZI_url('ML_FZI + geof final.xlsx'))
-
+        model = keras.models.load_model('model/LSTM_reg_1.h5')
+        df = pd.read_excel("gis.xlsx", index_col=0)
+        self.predict_FZI(model, df, cor_list, limit)
 
         # графики
         plt.figure(figsize=(16, 8))
@@ -138,34 +147,27 @@ class ML_FZI():
         plt.figure(figsize=(8, 80))
         d = x_test
         TIMES = np.arange(0, len(d))
-        plt.plot(b_model.predict(d), TIMES, '-', y_test, TIMES, '-')
+        plt.plot(model.predict(d), TIMES, '-', y_test, TIMES, '-')
         plt.legend(['pred', 'test'], loc='upper left')
         plt.title('Оценка результатов(y_test)')
-        plt.xlabel('Time')
-        plt.ylabel('Flowrate')
+        plt.xlabel('FZI')
+        plt.ylabel('Count')
         plt.savefig(self.get_ML_FZI_url('Оценка_результатов.png'))
 
         plt.figure(figsize=(8, 80))
         d = x_train
         TIMES = np.arange(0, len(d))
-        plt.plot(b_model.predict(d), TIMES, '-', y_train, TIMES, '-')
+        plt.plot(model.predict(d), TIMES, '-', y_train, TIMES, '-')
         plt.legend(['pred', 'test'], loc='upper left')
         plt.title('Оценка результатов')
-        plt.xlabel('Time')
-        plt.ylabel('Flowrate')
+        plt.xlabel('FZI')
+        plt.ylabel('Count')
         plt.savefig(self.get_ML_FZI_url('Оценка_результатов(y_train).png'))
 
         if self.finished is not None:
             self.finished()
 
-    def get_ML_FZI_url(self, filename=''):
-        return BASE_DIR+'/Files/{file}'.format(file=filename)
-
-    def get_accurancy(self):
-        if hasattr(self, 'accurancy'):
-            return abs(self.accurancy)
-        return None
 
 if __name__ == "__main__":
-    o = ML_FZI()
+    o = ML_FZI(petro_filename='rocktype_data.xlsx', gis_filename='gis.xlsx')
     o.start()

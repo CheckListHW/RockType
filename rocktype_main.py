@@ -147,7 +147,6 @@ class Window(QMainWindow):
         self.settings.set_exit_func(self.update)
 
         self.test_btn.hide()
-        self.debug()
 
     def check_before_start_ml(self):
         if not hasattr(self, 'gis_filename'):
@@ -221,8 +220,8 @@ class Window(QMainWindow):
         self.plot.update_figure()
 
     def debug(self):
-        self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
-        self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
+        # self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+        # self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
         self.gis_frame = pandas.read_excel(self.gis_filename)
 
         for name in self.ml_default_column:

@@ -28,7 +28,7 @@ def prepare_dataset_for_ml(valid_md, gis_md):
 
 def start_ml():
     gis_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/gis.xlsx'
-    petro_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+    petro_filename = '/rocktype_data.xlsx'
     wb_fes = SheetReader('fzi', petro_filename, 'A', 'B', 'C', 'D', 'E')
     valid_data_frame = pandas.read_excel(wb_fes.file_method_data)
     gis_data_frame = pandas.read_excel(gis_filename)

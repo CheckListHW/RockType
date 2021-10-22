@@ -223,7 +223,7 @@ class Window(QMainWindow, rocktype_ui):
 
     def debug(self):
         self.gis_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/gis.xlsx'
-        self.petro_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+        self.petro_filename = '/rocktype_data.xlsx'
         self.gis_frame = pandas.read_excel(self.gis_filename)
 
         for name in self.ml_default_column:
