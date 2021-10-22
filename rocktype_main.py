@@ -1,24 +1,20 @@
 import os
 import subprocess
-
-os.environ['BASE_DIR'] = os.path.dirname(__file__)
-BASE_DIR = os.environ['BASE_DIR']
-
 import sys
+import pandas
 from time import sleep
 from traceback import format_exception
 from threading import Thread
-
-import pandas
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QCheckBox, QDialog
 
-from plot import PlotCanvas
+os.environ['BASE_DIR'] = os.path.dirname(__file__)
+BASE_DIR = os.environ['BASE_DIR']
 
-from rocktype_method import Winland, Fzi, Lucia
 import MLFZI as ml
-
+from plot import PlotCanvas
+from rocktype_method import Winland, Fzi, Lucia
 
 
 def get_key(d, value):
@@ -302,6 +298,7 @@ class Window(QMainWindow):
             self.plot.set_parametrs(item[0], item[1])
 
     def calc_RTWS(self):
+        self.calc_rock_type()
         self.RTWS = self.settings.watersaturated_CB.currentText()
         if self.RTWS == 'current':
             sw = self.main.modify_current_sw
