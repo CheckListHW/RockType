@@ -1,6 +1,9 @@
 import os
-from os import startfile, path
-from os.path import dirname, realpath, isfile
+import subprocess
+from os import path
+from os.path import dirname
+
+import pandas as pd
 
 os.environ['BASE_DIR'] = dirname(__file__)
 BASE_DIR = os.environ['BASE_DIR']
@@ -10,9 +13,7 @@ import sys
 from time import sleep
 from traceback import format_exception
 from threading import Thread
-
-import pandas
-from PyQt5 import QtCore
+from PyQt5 import uic, QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QCheckBox, QDialog
 
@@ -122,7 +123,7 @@ class Window(QMainWindow, rocktype_ui):
     data_type = {
         'ГИС': 'gis',
         'Керн': 'kern',
-        'Петрография': 'petro',
+        'Лабораторные исследования керна': 'petro',
         'Пласт': 'layer',
         'Полигон': 'polygon',
         'Координаты скважин': 'coor'
@@ -152,25 +153,24 @@ class Window(QMainWindow, rocktype_ui):
         self.settings.set_exit_func(self.update)
 
         self.test_btn.hide()
-        self.debug()
 
     def check_before_start_ml(self):
         if not hasattr(self, 'gis_filename'):
             self.error_window.open('Необходимо загрузить файл: ГИСы')
             return False
 
-        if not isfile(self.gis_filename):
+        if not os.path.isfile(self.gis_filename):
             self.error_window.open('По указному пути не удалось найти ('
                                    + self.gis_filename + ') файл: ГИСы')
             return False
 
         if not hasattr(self, 'petro_filename'):
-            self.error_window.open('Необходимо загрузить файл: Петрография')
+            self.error_window.open('Необходимо загрузить файл: Лабораторные исследования керна')
             return False
 
-        if not isfile(self.petro_filename):
+        if not os.path.isfile(self.petro_filename):
             self.error_window.open('По указному пути не удалось найти ('
-                                   + self.petro_filename + ') файл: Петрография')
+                                   + self.petro_filename + ') файл: Лабораторные исследования керна')
             return False
 
         return True
@@ -212,8 +212,12 @@ class Window(QMainWindow, rocktype_ui):
         if finished:
             self.accuracy_label_value.setText(str(self.ml.get_accurancy()))
             file_dir = self.ml.get_ML_FZI_url()
-            file_dir = realpath(file_dir)
-            startfile(file_dir)
+            self.file_save_lbl.setText(str(self.ml.get_ML_FZI_url()))
+            if sys.platform == 'win32':
+                os.startfile(os.path.realpath(file_dir))
+            else:
+                subprocess.call(["xdg-open", file_dir])
+
 
     def signal_pb(self, msg):
         self.ml_pb.setValue(int(msg))
@@ -222,9 +226,9 @@ class Window(QMainWindow, rocktype_ui):
         self.plot.update_figure()
 
     def debug(self):
-        self.gis_filename = 'C:/Users/kosac/PycharmProjects/winland_R35/data/gis.xlsx'
-        self.petro_filename = '/rocktype_data.xlsx'
-        self.gis_frame = pandas.read_excel(self.gis_filename)
+        # self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
+        # self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
+        self.gis_frame = pd.read_excel(self.gis_filename)
 
         for name in self.ml_default_column:
             if name in self.gis_frame.columns:
@@ -271,7 +275,6 @@ class Window(QMainWindow, rocktype_ui):
 
         self.calc_RTWS_btn.show()
         self.calc_rock_type_btn.show()
-        self.calc_main_btn.setText('Плотность / пористость')
 
     def update_grid(self):
         if self.autoGridSize.checkState() == 0:
@@ -291,7 +294,7 @@ class Window(QMainWindow, rocktype_ui):
             self.plot = PlotCanvas(self.rockTypeSA, n_plot=1, )
 
         if not hasattr(self, 'petro_filename'):
-            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с петрогафией!", QMessageBox.Ok)
+            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с лабораторными исследованиями керна!", QMessageBox.Ok)
             return
 
         current_method_name = self.method_names.get(self.rocktype_CB.currentText())
@@ -304,6 +307,7 @@ class Window(QMainWindow, rocktype_ui):
             self.plot.set_parametrs(item[0], item[1])
 
     def calc_RTWS(self):
+        self.calc_rock_type()
         self.RTWS = self.settings.watersaturated_CB.currentText()
         if self.RTWS == 'current':
             sw = self.main.modify_current_sw
@@ -372,7 +376,7 @@ class Window(QMainWindow, rocktype_ui):
         self.gis_filename = QFileDialog.getOpenFileName(self, "Выбирите файл ГИС", '',
                                                         "Excel files (*.xlsx *.xls);;All Files (*)")[0]
         if self.gis_filename != '':
-            self.gis_frame = pandas.read_excel(self.gis_filename)
+            self.gis_frame = pd.read_excel(self.gis_filename)
 
             for name in self.ml_default_column:
                 if name in self.gis_frame.columns:
@@ -400,7 +404,7 @@ class Window(QMainWindow, rocktype_ui):
         pass
 
     def petro(self):
-        self.petro_filename = QFileDialog.getOpenFileName(self, "Выбирите файл петрографии", '',
+        self.petro_filename = QFileDialog.getOpenFileName(self, "Выбирите файл лабораторных исследований керна", '',
                                                           "Excel files (*.xlsx *.xls);;All Files (*)")[0]
         if self.petro_filename != '':
             return self.petro_filename

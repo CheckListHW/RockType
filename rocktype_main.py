@@ -1,7 +1,15 @@
 import os
 import subprocess
+from os import path
+from os.path import dirname
+
+import pandas as pd
+
+os.environ['BASE_DIR'] = dirname(__file__)
+BASE_DIR = os.environ['BASE_DIR']
+
+
 import sys
-import pandas
 from time import sleep
 from traceback import format_exception
 from threading import Thread
@@ -9,12 +17,9 @@ from PyQt5 import uic, QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QCheckBox, QDialog
 
-os.environ['BASE_DIR'] = os.path.dirname(__file__)
-BASE_DIR = os.environ['BASE_DIR']
-
-import MLFZI as ml
 from plot import PlotCanvas
 from rocktype_method import Winland, Fzi, Lucia
+import MLFZI as ml
 
 
 def get_key(d, value):
@@ -113,7 +118,7 @@ class Window(QMainWindow):
     data_type = {
         'ГИС': 'gis',
         'Керн': 'kern',
-        'Петрография': 'petro',
+        'Лабораторные исследования керна': 'petro',
         'Пласт': 'layer',
         'Полигон': 'polygon',
         'Координаты скважин': 'coor'
@@ -123,8 +128,8 @@ class Window(QMainWindow):
         super(Window, self).__init__()
         uic.loadUi('ui/rocktype.ui', self)
 
-        if not os.path.exists('Files'):
-            os.mkdir("Files")
+        if not path.exists(BASE_DIR + '/Files'):
+            os.mkdir(BASE_DIR+'/Files')
 
         self.error_window = ErrorWindow()
         self.settings = SettingsWindow()
@@ -155,12 +160,12 @@ class Window(QMainWindow):
             return False
 
         if not hasattr(self, 'petro_filename'):
-            self.error_window.open('Необходимо загрузить файл: Петрография')
+            self.error_window.open('Необходимо загрузить файл: Лабораторные исследования керна')
             return False
 
         if not os.path.isfile(self.petro_filename):
             self.error_window.open('По указному пути не удалось найти ('
-                                   + self.petro_filename + ') файл: Петрография')
+                                   + self.petro_filename + ') файл: Лабораторные исследования керна')
             return False
 
         return True
@@ -218,7 +223,7 @@ class Window(QMainWindow):
     def debug(self):
         # self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
         # self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
-        self.gis_frame = pandas.read_excel(self.gis_filename)
+        self.gis_frame = pd.read_excel(self.gis_filename)
 
         for name in self.ml_default_column:
             if name in self.gis_frame.columns:
@@ -265,7 +270,6 @@ class Window(QMainWindow):
 
         self.calc_RTWS_btn.show()
         self.calc_rock_type_btn.show()
-        self.calc_main_btn.setText('Плотность / пористость')
 
     def update_grid(self):
         if self.autoGridSize.checkState() == 0:
@@ -285,7 +289,7 @@ class Window(QMainWindow):
             self.plot = PlotCanvas(self.rockTypeSA, n_plot=1, )
 
         if not hasattr(self, 'petro_filename'):
-            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с петрогафией!", QMessageBox.Ok)
+            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с лабораторными исследованиями керна!", QMessageBox.Ok)
             return
 
         current_method_name = self.method_names.get(self.rocktype_CB.currentText())
@@ -367,7 +371,7 @@ class Window(QMainWindow):
         self.gis_filename = QFileDialog.getOpenFileName(self, "Выбирите файл ГИС", '',
                                                         "Excel files (*.xlsx *.xls);;All Files (*)")[0]
         if self.gis_filename != '':
-            self.gis_frame = pandas.read_excel(self.gis_filename)
+            self.gis_frame = pd.read_excel(self.gis_filename)
 
             for name in self.ml_default_column:
                 if name in self.gis_frame.columns:
@@ -395,7 +399,7 @@ class Window(QMainWindow):
         pass
 
     def petro(self):
-        self.petro_filename = QFileDialog.getOpenFileName(self, "Выбирите файл петрографии", '',
+        self.petro_filename = QFileDialog.getOpenFileName(self, "Выбирите файл лабораторных исследований керна", '',
                                                           "Excel files (*.xlsx *.xls);;All Files (*)")[0]
         if self.petro_filename != '':
             return self.petro_filename

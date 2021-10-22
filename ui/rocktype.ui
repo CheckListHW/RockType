@@ -27,7 +27,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_data_load">
        <attribute name="title">
@@ -62,7 +62,7 @@
              </property>
              <item>
               <property name="text">
-               <string>Петрография</string>
+               <string>Лабораторные исследования керна</string>
               </property>
              </item>
              <item>
@@ -389,8 +389,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1012</width>
-             <height>700</height>
+             <width>1007</width>
+             <height>716</height>
             </rect>
            </property>
           </widget>
@@ -494,8 +494,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>889</width>
-                   <height>42</height>
+                   <width>901</width>
+                   <height>39</height>
                   </rect>
                  </property>
                  <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -634,7 +634,7 @@
              <item>
               <widget class="QLabel" name="file_save_lbl">
                <property name="text">
-                <string> </string>
+                <string/>
                </property>
               </widget>
              </item>
@@ -731,7 +731,7 @@
      <x>0</x>
      <y>0</y>
      <width>1068</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

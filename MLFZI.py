@@ -139,7 +139,8 @@ class ML_FZI():
         b_model = keras.models.load_model('model/LSTM_reg_1.h5')
         b_model.evaluate(x_test, y_test)
         b_model.evaluate(x_train, y_train)
-        df = pd.read_excel("gis.xlsx", index_col=0)
+        df = pd.read_excel('data/gis.xlsx')
+        df['FZI'] = pd.Series('', index=df.index)
         self.predict_FZI(model, df, cor_list, limit)
 
         # графики
@@ -177,5 +178,5 @@ class ML_FZI():
 
 
 if __name__ == "__main__":
-    o = ML_FZI(petro_filename='rocktype_data.xlsx', gis_filename='gis.xlsx')
+    o = ML_FZI(petro_filename='data/rocktype_data.xlsx', gis_filename='gis.xlsx')
     o.start()

@@ -1,6 +1,6 @@
 pyuic5 winland.ui -o winland.py #convert
 
-python -m PyQt5.uic.pyuic -x ui/rocktype.ui -o rocktype_ui.py
-PS C:\Users\kosac\PycharmProjects\winland_R35> python -m PyQt5.uic.pyuic -x ui/scroll.ui -o scroll_ui.py
-PS C:\Users\kosac\PycharmProjects\winland_R35> python -m PyQt5.uic.pyuic -x ui/settings.ui -o settings_ui.py
-PS C:\Users\kosac\PycharmProjects\winland_R35> python -m PyQt5.uic.pyuic -x ui/error.ui -o error_ui.py
+python -m PyQt5.uic.pyuic -x ui/rocktype.ui -o ui/rocktype_ui.py
+python -m PyQt5.uic.pyuic -x ui/scroll.ui -o ui/scroll_ui.py
+python -m PyQt5.uic.pyuic -x ui/settings.ui -o ui/settings_ui.py
+python -m PyQt5.uic.pyuic -x ui/error.ui -o ui/error_ui.py
