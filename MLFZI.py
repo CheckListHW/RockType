@@ -1,27 +1,19 @@
 import os
 import numpy as np
-import pandas as pd
-import random as python_random
 import tensorflow as tf
-
-
-from matplotlib import pyplot as plt
-from numpy import arange
-from pandas import read_excel
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from tensorflow import keras
-from tensorflow.keras.layers import Dense, Dropout, LSTM
-from tensorflow.keras.models import Sequential
-from numpy.random import seed
-from math import inf
+import random as python_random
+import pandas as pd
 
 os.environ['BASE_DIR'] = os.path.dirname(__file__)
 BASE_DIR = os.environ['BASE_DIR']
 
+from matplotlib import pyplot as plt
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+from math import inf
 from rocktype_method import SheetReader
 
-seed(42)
+np.random.seed(42)
 python_random.seed(42)
 plt.style.use('fivethirtyeight')
 
@@ -57,7 +49,7 @@ class ML_FZI():
         return dataset_for_ml
 
     def get_ML_FZI_url(self, filename=''):
-        return BASE_DIR+'/Files/{file}'.format(file=filename)
+        return BASE_DIR + '/Files/{file}'.format(file=filename)
 
     def get_accurancy(self):
         if hasattr(self, 'accurancy'):
@@ -87,7 +79,8 @@ class ML_FZI():
         return data_array
 
     def predict_FZI(self, model, df, cor_list, limit):
-        predictions = [None] * limit + [i[0] for i in model.predict(self.prepare_data(df, cor_list, limit))] + [None] * limit
+        predictions = [None] * limit + [i[0] for i in model.predict(self.prepare_data(df, cor_list, limit))] + [
+            None] * limit
         df['FZI_predictions'] = predictions
         cors = ['MD'] + cor_list + ['FZI_predictions']
         df[cors].to_excel(self.get_ML_FZI_url('FZI_predictions.xlsx'))
@@ -100,13 +93,13 @@ class ML_FZI():
         valid_rows = self.prepare_dataset_for_ml(valid_data_frame['Глубина'], gis_data_frame['MD'])
         dataset_for_ml = gis_data_frame.iloc[valid_rows]
 
-        dataset_for_ml_reindex = dataset_for_ml.set_index(arange(len(dataset_for_ml.index)))
+        dataset_for_ml_reindex = dataset_for_ml.set_index(np.arange(len(dataset_for_ml.index)))
         dataset_for_ml_reindex['FZI'] = valid_data_frame['FZI']
 
         self.data_ml = self.get_ML_FZI_url('dataset_for_ml.xlsx')
         dataset_for_ml_reindex.to_excel(self.data_ml)
 
-        df = read_excel(self.data_ml)
+        df = pd.read_excel(self.data_ml)
         df = df.drop(columns=['Unnamed: 0'])
 
         cor_list = ['GK', 'BK', 'RHOB', 'IK', 'DT', 'NGK']
@@ -116,19 +109,19 @@ class ML_FZI():
         x_train, x_test, y_train, y_test = train_test_split(data_array, FZI, test_size=0.15, random_state=42)
 
         tf.random.set_seed(42)
-        model = Sequential()
-        model.add(LSTM(15, return_sequences=False, input_shape=(x_train.shape[1], x_train.shape[2])))
-        model.add(Dropout(0.5))
-        model.add(Dense(10, activation='relu'))
-        model.add(Dense(1))
+        model = tf.keras.models.Sequential()
+        model.add(tf.keras.layers.LSTM(15, return_sequences=False, input_shape=(x_train.shape[1], x_train.shape[2])))
+        model.add(tf.keras.layers.Dropout(0.5))
+        model.add(tf.keras.layers.Dense(10, activation='relu'))
+        model.add(tf.keras.layers.Dense(1))
 
         model.compile(optimizer='adam', loss='mean_squared_error')
 
         callbacks = [
-            keras.callbacks.ModelCheckpoint(
+            tf.keras.callbacks.ModelCheckpoint(
                 "model/LSTM_reg_1.h5", save_best_only=True, monitor="val_loss"
             ),
-            keras.callbacks.ReduceLROnPlateau(
+            tf.keras.callbacks.ReduceLROnPlateau(
                 monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
             ), ]
 
@@ -136,7 +129,7 @@ class ML_FZI():
 
         model.evaluate(x_test, y_test), model.evaluate(x_train, y_train)
 
-        b_model = keras.models.load_model('model/LSTM_reg_1.h5')
+        b_model = tf.keras.models.load_model('model/LSTM_reg_1.h5')
         b_model.evaluate(x_test, y_test)
         b_model.evaluate(x_train, y_train)
         df = pd.read_excel('data/gis.xlsx')
@@ -178,5 +171,5 @@ class ML_FZI():
 
 
 if __name__ == "__main__":
-    o = ML_FZI(petro_filename='data/rocktype_data.xlsx', gis_filename='gis.xlsx')
+    o = ML_FZI(petro_filename='data/rocktype_data.xlsx', gis_filename='data/gis.xlsx')
     o.start()
