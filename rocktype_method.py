@@ -57,7 +57,7 @@ class SheetReader:
         self.FZI_sheet = self.FZI.active
 
         # очень нужно не удаляй
-        columns_name = ['Глубина', 'Пористость', 'Проницаемость', 'FZI']
+        columns_name = ['Глубина', 'Пористость', 'Проницаемость', 'fzi']
         for i in range(len(columns_name)):
             cell = self.FZI_sheet.cell(row=1, column=i + 1)
             cell.value = columns_name[i]
@@ -103,8 +103,8 @@ class SheetReader:
         df['porosity*'] = df['Пористость'] / (1 - df['Пористость'])
         df['корень'] = (df['Проницаемость'] / df['Пористость']) ** 0.5
         df['RQI'] = 0.0314 * df['корень']
-        df['FZI'] = df['RQI'] / df['porosity*']
-        df['Log(FZI)'] = log(df['FZI'])
+        df['fzi'] = df['RQI'] / df['porosity*']
+        df['Log(FZI)'] = log(df['fzi'])
         df['probability'] = 1 / (len(df)) * (df.index + 1)
         df = df.sort_values(by='Log(FZI)', ascending=True)  # сортировка данных по возрастанию
         df['probability'] = sorted(df['probability'])

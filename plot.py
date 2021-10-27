@@ -1,6 +1,8 @@
+import math
 from math import ceil, inf, exp
 from random import random
 
+import numpy as np
 from numpy import array, exp, polyfit, poly1d
 from pandas import DataFrame
 from scipy.optimize import curve_fit
@@ -56,7 +58,7 @@ class PlotCanvas(FigureCanvasQTAgg):
     def plot_number(self):
         return len(self.figure.axes) + 1
 
-    def add_plot(self, name, x=None, y=None, plot_type=None, color=None):
+    def add_plot(self, name, x=None, y=None, plot_type=None, color=None, label_x=None, label_y=None):
         for axes in self.figure.axes:
             if axes.get_title().__contains__(name):
                 return axes
@@ -66,6 +68,8 @@ class PlotCanvas(FigureCanvasQTAgg):
 
         name += '' if plot_type is None else self.plot_type.get(plot_type)
         ax = self.figure.add_subplot(self.nrows, self.ncols, self.plot_number(), facecolor=color)
+        ax.set_xlabel(label_x)
+        ax.set_ylabel(label_y)
 
         if x is not None and y is not None:
             ax.plot(x, y)
@@ -126,33 +130,23 @@ class PlotCanvas(FigureCanvasQTAgg):
             y1 = array(d['y1'])
 
             if self.get_parametrs('trend_type') == 'exp':
-                z = curve_fit(lambda t, a, b: a * exp(b * t), x1, y1)
-                xx = []
-                yy = []
+                z = curve_fit(lambda x, a, b: a * exp(b * x), x1, y1)
 
-                for i1 in range(len(x1)):
-                    xx.append(x1[i1])
-                    yy.append(self.f(z[0][0], z[0][1], x1[i1]))
-
+                yy = list(map(lambda x: z[0][0]*math.e**(z[0][1]*x), x1))
                 rSquare = self.rSquare(yy, y1)
-                plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
+
+                plot.plot(sorted(x1), sorted(yy), "-", color=rock_type_colors[i],
                           label="y=%.4f*e^(%.3fx)|R^2=%.3f" % (z[0][0], z[0][1], rSquare))
 
             if self.get_parametrs('trend_type') == 'line':
                 z = polyfit(x1, y1, 1)
                 p = poly1d(z)
-                xx = []
-                yy = []
-                for i1 in range(len(x1)):
-                    if p(x1[i1]) > min(y1):
-                        xx.append(x1[i1])
-                        yy.append(p(x1[i1]))
-                plot.plot(sorted(xx), sorted(yy), "-", color=rock_type_colors[i],
+
+                plot.plot(sorted(x1), sorted(p(x1)), "-", color=rock_type_colors[i],
                           label="y=%.6fx+(%.6f)" % (z[0], z[1]))
 
         self.show_legend(plot)
 
-        plot.set_xscale('log')
         plot.set_yscale('log')
         self.draw()
 
@@ -222,7 +216,7 @@ class PlotCanvas(FigureCanvasQTAgg):
                 rock_type_value = str(round(borders[rock_type_n - 1], 2))
             else:
                 rock_type_value = str(inf)
-            plot.plot(dots_x[rock_type_n], [rock_type_n]*(len(dots_x[rock_type_n])),
+            plot.plot(dots_x[rock_type_n], [rock_type_n] * (len(dots_x[rock_type_n])),
                       '-', markersize=1, color=colors[rock_type_n],
                       label='Rock Type ' + str(rock_type_n + 1) + ': ' + rock_type_value)
 

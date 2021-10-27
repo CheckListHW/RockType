@@ -27,7 +27,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tab_data_load">
        <attribute name="title">
@@ -44,7 +44,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>385</width>
+            <width>500</width>
             <height>40</height>
            </size>
           </property>
@@ -88,6 +88,11 @@
              <item>
               <property name="text">
                <string>Координаты скважин</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Датасет для ML</string>
               </property>
              </item>
             </widget>
@@ -559,20 +564,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="mode_label">
-               <property name="maximumSize">
-                <size>
-                 <width>100</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Скорость обучения</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="ml_speed_cb">
+              <widget class="QComboBox" name="ml_method_cb">
                <property name="enabled">
                 <bool>true</bool>
                </property>
@@ -590,44 +582,20 @@
                </property>
                <item>
                 <property name="text">
-                 <string>fast</string>
+                 <string>fzi</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>average</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>slow</string>
+                 <string>winland</string>
                 </property>
                </item>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="accuracy_label">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16</height>
-                </size>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::NoFrame</enum>
-               </property>
+              <widget class="QLabel" name="path_file_lbl">
                <property name="text">
-                <string>Точность</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="accuracy_label_value">
-               <property name="frameShape">
-                <enum>QFrame::NoFrame</enum>
-               </property>
-               <property name="text">
-                <string>----</string>
+                <string>path</string>
                </property>
               </widget>
              </item>

@@ -8,7 +8,6 @@ import pandas as pd
 os.environ['BASE_DIR'] = dirname(__file__)
 BASE_DIR = os.environ['BASE_DIR']
 
-
 import sys
 from time import sleep
 from traceback import format_exception
@@ -19,7 +18,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox,
 
 from plot import PlotCanvas
 from rocktype_method import Winland, Fzi, Lucia
-import MLFZI as ml
+import ML as ml
 
 
 def get_key(d, value):
@@ -102,11 +101,12 @@ class SettingsWindow(QMainWindow):
 
 
 class Window(QMainWindow):
-    ml_default_column = ['MD', 'FZI', 'GK', 'BK', 'RHOB', 'IK', 'DT', 'NGK']
+    ml_default_column = ['GK', 'BK', 'RHOB', 'IK', 'DT', 'NGK']
 
-    gis_selected = {
-        'MD': []
-    }
+    gis_skipped = ['MD', 'fzi', 'FZI', 'Fzi', 'winland', 'Winland', 'WINLAND',
+                   'Глубина', 'глубина', 'Unnamed: 0']
+
+    gis_selected = set()
     method_names = {
         'Winland r35': 'winland',
         'Lucia (RFN)': 'lucia',
@@ -121,15 +121,17 @@ class Window(QMainWindow):
         'Лабораторные исследования керна': 'petro',
         'Пласт': 'layer',
         'Полигон': 'polygon',
+        'Датасет для ML': 'ml_train',
         'Координаты скважин': 'coor'
     }
+    ml_train_filename = None
 
     def __init__(self):
         super(Window, self).__init__()
         uic.loadUi('ui/rocktype.ui', self)
 
         if not path.exists(BASE_DIR + '/Files'):
-            os.mkdir(BASE_DIR+'/Files')
+            os.mkdir(BASE_DIR + '/Files')
 
         self.error_window = ErrorWindow()
         self.settings = SettingsWindow()
@@ -138,8 +140,8 @@ class Window(QMainWindow):
         self.calc_RTWS_btn.clicked.connect(self.calc_RTWS)
         self.update_chart.clicked.connect(self.update_grid)
         self.load_data_bt.clicked.connect(self.load_data)
-        self.rocktype_CB.currentTextChanged.connect(self.rocktype_CB_Changed)
-        self.rocktype_CB_Changed(self.rocktype_CB.currentText())
+        self.rocktype_CB.currentTextChanged.connect(self.rocktype_CB_changed)
+        self.rocktype_CB_changed(self.rocktype_CB.currentText())
         self.test_btn.clicked.connect(self.test)
         self.settings_BTN.clicked.connect(self.open_settings)
         self.start_ml_btn.clicked.connect(self.start_ml)
@@ -179,8 +181,9 @@ class Window(QMainWindow):
             if self.thread_progressbar.isRunning():
                 self.thread_progressbar.terminate()
 
-        self.ml = ml.ML_FZI(petro_filename=self.petro_filename, gis_filename=self.gis_filename,
-                            batch_size=ml_speed[self.ml_speed_cb.currentText()], on_finished=self.ml_finished)
+        self.ml = ml.ML(cor_list=self.gis_selected, petro_filename=self.petro_filename,
+                        gis_filename=self.gis_filename, method_name=self.ml_method_cb.currentText(),
+                        on_finished=self.ml_finished)
 
         self.ml_pb.show()
         self.thread_progressbar = ProgressBarThread()
@@ -189,30 +192,26 @@ class Window(QMainWindow):
         th = Thread(target=self.thread_ml)
         th.start()
 
-
     def thread_ml(self):
         self.thread_progressbar.start()
         try:
-            self.ml.start()
+            self.ml.start(train_filename=self.ml_train_filename)
         except Exception as ex:
             self.debug_list.addItem(str(ex))
             self.ml_finished(finished=False)
         except:
             print(':(')
 
-
-    def ml_finished(self, finished = True):
+    def ml_finished(self, finished=True):
         self.thread_progressbar.terminate()
         self.ml_pb.hide()
         if finished:
-            self.accuracy_label_value.setText(str(self.ml.get_accurancy()))
-            file_dir = self.ml.get_ML_FZI_url()
-            self.file_save_lbl.setText(str(self.ml.get_ML_FZI_url()))
+            file_dir = self.ml.get_ML_url()
+            self.path_file_lbl.setText(str(self.ml.get_ML_url()))
             if sys.platform == 'win32':
                 os.startfile(os.path.realpath(file_dir))
             else:
                 subprocess.call(["xdg-open", file_dir])
-
 
     def signal_pb(self, msg):
         self.ml_pb.setValue(int(msg))
@@ -220,37 +219,12 @@ class Window(QMainWindow):
     def test(self):
         self.plot.update_figure()
 
-    def debug(self):
-        # self.petro_filename = '/home/dev/PycharmProjects/winland_R35/data/rocktype_data.xlsx'
-        # self.gis_filename = '/home/dev/PycharmProjects/winland_R35/data/gis.xlsx'
-        self.gis_frame = pd.read_excel(self.gis_filename)
-
-        for name in self.ml_default_column:
-            if name in self.gis_frame.columns:
-                radiobutton = QCheckBox(name)
-                radiobutton.setChecked(True)
-                self.gis_selected[name] = True
-                radiobutton.country = name
-                radiobutton.toggled.connect(self.onClicked)
-                self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
-
-        for name in self.gis_frame.columns:
-            if name not in self.ml_default_column:
-                radiobutton = QCheckBox(name)
-                radiobutton.setChecked(False)
-                radiobutton.country = name
-                radiobutton.toggled.connect(self.onClicked)
-                self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
-
-        self.scrollAreaWidgetContents_2.repaint()
-
-
-    def onClicked(self):
+    def on_clicked(self):
         checkbox = self.sender()
         if checkbox.isChecked():
-            self.gis_selected[checkbox.country] = True
+            self.gis_selected.add(checkbox.country)
         else:
-            del self.gis_selected[checkbox.country]
+            self.gis_selected.remove(checkbox.country)
         return
 
     def open_settings(self):
@@ -261,7 +235,7 @@ class Window(QMainWindow):
         self.debug_list.addItem(tb)
         print("Oбнаружена ошибка !:", tb)
 
-    def rocktype_CB_Changed(self, args):
+    def rocktype_CB_changed(self, args):
         if args == 'Lucia (RFN)':
             self.calc_RTWS_btn.hide()
             self.calc_rock_type_btn.hide()
@@ -289,7 +263,8 @@ class Window(QMainWindow):
             self.plot = PlotCanvas(self.rockTypeSA, n_plot=1, )
 
         if not hasattr(self, 'petro_filename'):
-            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с лабораторными исследованиями керна!", QMessageBox.Ok)
+            QMessageBox.critical(self, "Ошибка!", "Предварительно загрузите файл с лабораторными исследованиями керна!",
+                                 QMessageBox.Ok)
             return
 
         current_method_name = self.method_names.get(self.rocktype_CB.currentText())
@@ -312,7 +287,7 @@ class Window(QMainWindow):
         self.plot.draw_RTWS(RTWS, sw)
 
     def calc_rock_type(self):
-        ax = self.plot.add_plot('Рок-типы', [0, 0], [0, 0])
+        ax = self.plot.add_plot('Рок-типы', [0, 0], [0, 0], label_y='Проницаемость', label_x='Пористость')
         rock_type_borders, _ = self.plot.get_borders_main_plot()
 
         dots_rock_type = self.main.calc_rocktype(rock_type_borders)
@@ -370,30 +345,36 @@ class Window(QMainWindow):
     def gis(self):
         self.gis_filename = QFileDialog.getOpenFileName(self, "Выбирите файл ГИС", '',
                                                         "Excel files (*.xlsx *.xls);;All Files (*)")[0]
-        if self.gis_filename != '':
-            self.gis_frame = pd.read_excel(self.gis_filename)
-
-            for name in self.ml_default_column:
-                if name in self.gis_frame.columns:
-                    radiobutton = QCheckBox(name)
-                    radiobutton.setChecked(True)
-                    self.gis_selected[name] = True
-                    radiobutton.country = name
-                    radiobutton.toggled.connect(self.onClicked)
-                    self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
-
-            for name in self.gis_frame.columns:
-                if name not in self.ml_default_column:
-                    radiobutton = QCheckBox(name)
-                    radiobutton.setChecked(False)
-                    radiobutton.country = name
-                    radiobutton.toggled.connect(self.onClicked)
-                    self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
-
-            self.scrollAreaWidgetContents_2.repaint()
+        if self.gis_filename != '' and self.ml_train_filename is None:
+            self.draw_scroll_area_with_curves(self.gis_filename)
             return self.gis_filename
         else:
             return False
+
+    def draw_scroll_area_with_curves(self, filename):
+        for i in reversed(range(self.gridLayout_choose_gis.count())):
+            self.gridLayout_choose_gis.itemAt(i).widget().deleteLater()
+        gis_frame = pd.read_excel(filename)
+        columns_gis_frame = set(gis_frame.columns).difference(set(self.gis_skipped))
+
+        for name in self.ml_default_column:
+            if name in columns_gis_frame:
+                radiobutton = QCheckBox(name)
+                radiobutton.setChecked(True)
+                self.gis_selected.add(name)
+                radiobutton.country = name
+                radiobutton.toggled.connect(self.on_clicked)
+                self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
+
+        for name in columns_gis_frame:
+            if name not in self.ml_default_column:
+                radiobutton = QCheckBox(name)
+                radiobutton.setChecked(False)
+                radiobutton.country = name
+                radiobutton.toggled.connect(self.on_clicked)
+                self.gridLayout_choose_gis.addWidget(radiobutton, 0, self.gridLayout_choose_gis.columnCount() + 1)
+
+        self.scrollAreaWidgetContents_2.repaint()
 
     def kern(self):
         pass
@@ -404,6 +385,16 @@ class Window(QMainWindow):
         if self.petro_filename != '':
             return self.petro_filename
         else:
+            return False
+
+    def ml_train(self):
+        self.ml_train_filename = QFileDialog.getOpenFileName(self, "Выбирите файл который будет использовать ml", '',
+                                                             "Excel files (*.xlsx *.xls);;All Files (*)")[0]
+        if self.ml_train_filename != '':
+            self.draw_scroll_area_with_curves(self.ml_train_filename)
+            return self.ml_train_filename
+        else:
+            self.ml_train_filename = None
             return False
 
     def layer(self):
