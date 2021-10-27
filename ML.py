@@ -1,7 +1,6 @@
 import os
-import numpy as np
-import tensorflow as tf
 import random as python_random
+import numpy as np
 import pandas as pd
 
 os.environ['BASE_DIR'] = os.path.dirname(__file__)
@@ -11,6 +10,11 @@ from matplotlib import pyplot as plt
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from math import inf
+from tensorflow.keras.layers import LSTM, Dropout, Dense
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from tensorflow import random
+
 from rocktype_method import SheetReader
 
 np.random.seed(42)
@@ -119,20 +123,20 @@ class ML:
 
         x_train, x_test, y_train, y_test = train_test_split(data_array, fzi, test_size=0.15, random_state=42)
 
-        tf.random.set_seed(42)
-        model = tf.keras.models.Sequential()
-        model.add(tf.keras.layers.LSTM(15, return_sequences=False, input_shape=(x_train.shape[1], x_train.shape[2])))
-        model.add(tf.keras.layers.Dropout(0.5))
-        model.add(tf.keras.layers.Dense(10, activation='relu'))
-        model.add(tf.keras.layers.Dense(1))
+        random.set_seed(42)
+        model = Sequential()
+        model.add(LSTM(15, return_sequences=False, input_shape=(x_train.shape[1], x_train.shape[2])))
+        model.add(Dropout(0.5))
+        model.add(Dense(10, activation='relu'))
+        model.add(Dense(1))
 
         model.compile(optimizer='adam', loss='mean_squared_error')
 
         callbacks = [
-            tf.keras.callbacks.ModelCheckpoint(
+            ModelCheckpoint(
                 "model/LSTM_reg_1.h5", save_best_only=True, monitor="val_loss"
             ),
-            tf.keras.callbacks.ReduceLROnPlateau(
+            ReduceLROnPlateau(
                 monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
             ), ]
 
@@ -140,10 +144,10 @@ class ML:
 
         model.evaluate(x_test, y_test), model.evaluate(x_train, y_train)
 
-        b_model = tf.keras.models.load_model('model/LSTM_reg_1.h5')
+        b_model = load_model('model/LSTM_reg_1.h5')
         b_model.evaluate(x_test, y_test)
         b_model.evaluate(x_train, y_train)
-        df = pd.read_excel('data/gis.xlsx')
+        df = pd.read_excel(self.gis_filename)
         df['fzi'] = pd.Series('', index=df.index)
         self.predict_fzi(model, df, self.cor_list, limit)
 
@@ -155,7 +159,7 @@ class ML:
         plt.ylabel('loss')
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
-        plt.savefig(self.get_ML_fzi_url('model_loss.png'))
+        plt.savefig(self.get_ML_url('model_loss.png'))
 
         plt.figure(figsize=(8, 80))
         d = x_test
@@ -165,7 +169,7 @@ class ML:
         plt.title('Оценка результатов(y_test)')
         plt.xlabel('fzi')
         plt.ylabel('Count')
-        plt.savefig(self.get_ML_fzi_url('Оценка_результатов.png'))
+        plt.savefig(self.get_ML_url('Оценка_результатов.png'))
 
         plt.figure(figsize=(8, 80))
         d = x_train
@@ -175,7 +179,7 @@ class ML:
         plt.title('Оценка результатов')
         plt.xlabel('fzi')
         plt.ylabel('Count')
-        plt.savefig(self.get_ML_fzi_url('Оценка_результатов(y_train).png'))
+        plt.savefig(self.get_ML_url('Оценка_результатов(y_train).png'))
 
         if self.finished is not None:
             self.finished()
